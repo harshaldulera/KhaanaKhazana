@@ -1,11 +1,11 @@
-# Tutelage Mobile App
+# KhaanaKhazana Mobile App
 
-A React Native mobile application for Tutelage platform.
+A React Native mobile application for KhaanaKhazana platform.
 
 ## Project Structure
 
 ```
-tutelage/
+KhaanaKhazana/
 ├── app/                    # App directory (screens using directory-based routing)
 │   ├── (auth)/            # Authentication related screens
 │   ├── (tabs)/            # Main tab navigation screens
@@ -41,7 +41,7 @@ tutelage/
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/virajbhartiya/tutelage.git
+   git clone https://github.com/harshaldulera/KhaanaKhazana.git
    ```
 
 2. Install dependencies:

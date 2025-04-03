@@ -5,8 +5,8 @@ import { Colors } from "../../constants/Colors";
 export default function HomeScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Tutelage</Text>
-      <Text style={styles.subtitle}>Your learning journey starts here</Text>
+      <Text style={styles.title}>Welcome to KhaanaKhazana</Text>
+      <Text style={styles.subtitle}>Your new journey starts here</Text>
     </View>
   );
 }
