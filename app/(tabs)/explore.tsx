@@ -6,7 +6,7 @@ export default function ExploreScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome to KhaanaKhazana</Text>
-      <Text style={styles.subtitle}>Your Food Journey Begins Here</Text>
+      <Text style={styles.subtitle}>Your new Journey Begins Here</Text>
     </View>
   );
 }

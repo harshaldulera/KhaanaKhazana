@@ -1,31 +1,22 @@
-import { StyleSheet } from "react-native";
+import { Button, StyleSheet, ScrollView } from "react-native";
 import { Text, View } from "react-native";
 import { Colors } from "../../constants/Colors";
+import CarouselCards from "@/components/carouselcards";
+import ButtonRow from "@/components/buttonrow";
+import EventHighlights from "@/components/eventhighlights";
 
 export default function HomeScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome to KhaanaKhazana</Text>
-      <Text style={styles.subtitle}>Your new journey starts here</Text>
-    </View>
+    <ScrollView style={styles.container}>
+      <CarouselCards />
+      <ButtonRow />
+      <EventHighlights />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: Colors.light.background,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: Colors.light.text,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: Colors.light.icon,
   },
 });
