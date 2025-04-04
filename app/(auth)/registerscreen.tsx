@@ -72,7 +72,7 @@ const RegisterScreen = () => {
   const [cuisineType, setCuisineType] = useState(null);
 
   const handleRegister = () => {
-    router.replace("/explore");
+    router.replace("/(tabs)");
   };
 
   return (

@@ -46,6 +46,9 @@ const styles = StyleSheet.create({
     buttonText: {
         color: '#fff',
         fontSize: 16,
+        // alignItems: 'center',
+        // justifyContent: 'center',
+        textAlign: 'center',
     },
 });
 
