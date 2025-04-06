@@ -1,19 +1,39 @@
-import { StyleSheet } from "react-native";
-import { Text, View } from "react-native";
+import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
 import { Colors } from "../../constants/Colors";
+import { AntDesign } from "@expo/vector-icons";
 
 export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.profileHeader}>
         <View style={styles.avatarPlaceholder} />
-        <Text style={styles.name}>John Doe</Text>
-        <Text style={styles.email}>john.doe@example.com</Text>
+        <Text style={styles.name}>Sujal Jain</Text>
+        <Text style={styles.email}>suja16@example.com</Text>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>My Progress</Text>
+        {/* <AntDesign name="clockcircleo" size={24} color={Colors.light.icon} /> */}
+        {/* <Text style={styles.sectionTitle}>Donation History</Text> */}
         {/* Add progress components here */}
+        <TouchableOpacity style={styles.iconTextContainer}>
+          <AntDesign name="clockcircleo" size={24} color={Colors.light.icon} />
+          <Text style={styles.sectionTitle}>Donation History</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconTextContainer}>
+          <AntDesign name="calendar" size={24} color={Colors.light.icon} />
+          <Text style={styles.sectionTitle}>Schedule Donation</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconTextContainer}>
+          <AntDesign name="infocirlceo" size={24} color={Colors.light.icon} />
+          <Text style={styles.sectionTitle}>Help & FAQ</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconTextContainer}>
+          <AntDesign name="setting" size={24} color={Colors.light.icon} />
+          <Text style={styles.sectionTitle}>Settings</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.button}>
+          <Text style={styles.buttonText}>Register</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -37,11 +57,26 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.light.icon,
     marginBottom: 16,
   },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+  },
+  iconTextContainer: {
+    flexDirection: "row",
+    alignItems: "center", 
+    paddingVertical: 10,
+  },
   name: {
     fontSize: 24,
     fontWeight: "bold",
     color: Colors.light.text,
     marginBottom: 4,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: Colors.light.text,
+    marginLeft: 10, // Add space between icon and text
   },
   email: {
     fontSize: 16,
@@ -50,10 +85,14 @@ const styles = StyleSheet.create({
   section: {
     padding: 20,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: Colors.light.text,
-    marginBottom: 16,
+  button: {
+    flex: 1,
+    marginHorizontal: 5,
+    backgroundColor: Colors.light.tint,
+    paddingVertical: 10,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: "white",
+    alignItems: "center",
   },
 });
