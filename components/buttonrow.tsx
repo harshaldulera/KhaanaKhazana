@@ -1,11 +1,12 @@
 import React from 'react';
 import { Colors } from '@/constants/Colors';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { router } from 'expo-router';
 
 const ButtonRow = () => {
     const handleButtonPress = (buttonType: string) => {
         console.log(`${buttonType} button pressed`);
-        // Add your navigation or action logic here
+        router.replace("/(tabs)/ngolist");
     };
 
     return (

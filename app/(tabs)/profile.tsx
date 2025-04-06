@@ -12,9 +12,6 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.section}>
-        {/* <AntDesign name="clockcircleo" size={24} color={Colors.light.icon} /> */}
-        {/* <Text style={styles.sectionTitle}>Donation History</Text> */}
-        {/* Add progress components here */}
         <TouchableOpacity style={styles.iconTextContainer}>
           <AntDesign name="clockcircleo" size={24} color={Colors.light.icon} />
           <Text style={styles.sectionTitle}>Donation History</Text>
