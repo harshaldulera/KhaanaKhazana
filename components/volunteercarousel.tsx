@@ -8,6 +8,9 @@ import {
   Dimensions,
   FlatList,
 } from "react-native";
+import robinhoodLogo from "../assets/images/robinhood.jpg";
+import humanaLogo from "../assets/images/humana.jpg"; 
+import sevaLogo from "../assets/images/seva.svg";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -20,20 +23,40 @@ interface NgoItem {
 const ngoData: NgoItem[] = [
   {
     id: "1",
-    logo: "",
+    logo: robinhoodLogo,
     name: "The RobinHood",
   },
   {
     id: "2",
-    logo: "",
-    name: "humana",
+    logo: humanaLogo,
+    name: "Humana",
+  },
+  {
+    id: "3",
+    logo: sevaLogo,
+    name: "Seva Sahiyog NGO",
+  },
+  {
+    id: "4",
+    logo: robinhoodLogo,
+    name: "The RobinHood",
+  },
+  {
+    id: "5",
+    logo: humanaLogo,
+    name: "Humana",
+  },
+  {
+    id: "6",
+    logo: sevaLogo,
+    name: "Seva Sahiyog NGO",
   },
 ];
 
 const VolunteerCarousel = () => {
   const renderItem = ({ item }: { item: NgoItem }) => (
     <TouchableOpacity style={styles.card}>
-      <Image source={{ uri: item.logo }} style={styles.image} />
+      <Image source={item.logo} style={styles.image} />
       <Text style={styles.name}>{item.name}</Text>
     </TouchableOpacity>
   );
@@ -73,9 +96,9 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   image: {
-    width: "100%",
+    width: 100,
     height: 100,
-    borderRadius: 10,
+    borderRadius: 50,
   },
   name: {
     marginTop: 5,
