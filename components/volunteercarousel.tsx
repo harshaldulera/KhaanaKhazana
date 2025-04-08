@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   card: {
     width: screenWidth * 0.6,
     alignItems: "center",
-    marginHorizontal: 10,
+    marginHorizontal: -70,
   },
   image: {
     width: 100,
