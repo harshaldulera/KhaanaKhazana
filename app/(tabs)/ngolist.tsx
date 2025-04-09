@@ -13,11 +13,15 @@ import {
 import robinhoodLogo from "../../assets/images/robinhood.jpg";
 import humanaLogo from "../../assets/images/humana.jpg";
 import sevaLogo from "../../assets/images/seva.svg";
+import { MaterialIcons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 interface NgoItem {
   id: string;
   logo: string;
   name: string;
+  meals: number;
+  collectionTime: string;
 }
 
 const ngos = [
@@ -25,61 +29,43 @@ const ngos = [
     id: "1",
     logo: robinhoodLogo,
     name: "The RobinHood",
+    meals: 20,
+    collectionTime: "2pm - 6pm",
   },
   {
     id: "2",
     logo: humanaLogo,
     name: "Humana",
+    meals: 15,
+    collectionTime: "7pm - 12pm",
   },
   {
     id: "3",
     logo: sevaLogo,
     name: "Seva Sahiyog NGO",
+    meals: 13,
+    collectionTime: "8pm - 10pm",
   },
   {
     id: "4",
     logo: robinhoodLogo,
     name: "The RobinHood",
+    meals: 20,
+    collectionTime: "2pm - 6pm",
   },
   {
     id: "5",
     logo: humanaLogo,
     name: "Humana",
+    meals: 15,
+    collectionTime: "7pm - 12pm",
   },
   {
     id: "6",
     logo: sevaLogo,
     name: "Seva Sahiyog NGO",
-  },
-  {
-    id: "1",
-    logo: robinhoodLogo,
-    name: "The RobinHood",
-  },
-  {
-    id: "2",
-    logo: humanaLogo,
-    name: "Humana",
-  },
-  {
-    id: "3",
-    logo: sevaLogo,
-    name: "Seva Sahiyog NGO",
-  },
-  {
-    id: "4",
-    logo: robinhoodLogo,
-    name: "The RobinHood",
-  },
-  {
-    id: "5",
-    logo: humanaLogo,
-    name: "Humana",
-  },
-  {
-    id: "6",
-    logo: sevaLogo,
-    name: "Seva Sahiyog NGO",
+    meals: 13,
+    collectionTime: "8pm - 10pm",
   },
 ];
 
@@ -89,6 +75,10 @@ const NgoList = () => {
 
   const handleSelectNgo = ( ngo: NgoItem ) => {
     setSelectedNgo(ngo);
+  };
+
+  const handleButtonPress = () => {
+    router.replace("/(tabs)/ngostats");
   };
 
   return (
@@ -102,13 +92,26 @@ const NgoList = () => {
         />
       </View>
       <VolunteerCarousel />
+      <Text style={styles.title}>Food Required</Text>
       {ngos.map((item) => (
         <TouchableOpacity key={item.id} onPress={() => handleSelectNgo(item)}>
-          <View style={styles.ngoItem}>
+        <View style={styles.ngoCard}>
+          <View style={styles.ngoDetailsContainer}> 
             <Image source={item.logo} style={styles.logo} />
-            <Text style={styles.ngoName}>{item.name}</Text>
+            <View style={styles.ngoTextContainer}> 
+              <Text style={styles.ngoName}>{item.name}</Text>
+              <View style={styles.mealsContainer}> 
+                <MaterialIcons name="restaurant" size={16} color="#555" /> 
+                <Text style={styles.ngoMeals}>{item.meals}</Text>
+              </View>
+              <View style={styles.collectionTimeContainer}>
+                <MaterialIcons name="alarm" size={16} color="#555" />
+                <Text style={styles.ngoCollectionTime}>{item.collectionTime}</Text>
+              </View>
+            </View>
           </View>
-        </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
       ))}
     </ScrollView>
   );
@@ -119,20 +122,56 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
-  ngoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  ngoCard: {
+    backgroundColor: '#fff', 
+    borderRadius: 10, 
     padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    marginBottom: 10,
+    shadowColor: '#000', 
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 2, 
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  ngoDetailsContainer: {
+    flexDirection: 'row', 
+    alignItems: 'center', 
+  },
+  ngoTextContainer: {
+    marginLeft: 5, 
+    flex: 1, 
+  },
+  mealsContainer: {
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    marginRight: 5,
+  },
+  collectionTimeContainer: {
+    flexDirection: 'row', 
+    alignItems: 'center',
+    marginRight: 5, 
+  },
+  ngoMeals: {
+    fontSize: 14,
+    color: '#555', 
+  },
+  ngoCollectionTime: {
+    fontSize: 14,
+    color: '#555',
   },
   logo: {
-    width: 40, 
-    height: 40, 
+    width: 70, 
+    height: 70, 
     marginRight: 10,
   },
   ngoName: {
     fontSize: 16,
+    fontWeight: "semibold",
   },
   searchContainer: {
     flexDirection: "row",

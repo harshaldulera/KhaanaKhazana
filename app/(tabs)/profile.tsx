@@ -8,7 +8,7 @@ export default function ProfileScreen() {
       <View style={styles.profileHeader}>
         <View style={styles.avatarPlaceholder} />
         <Text style={styles.name}>Sujal Jain</Text>
-        <Text style={styles.email}>suja16@example.com</Text>
+        <Text style={styles.email}>suja16@somaiya.edu</Text>
       </View>
 
       <View style={styles.section}>
@@ -29,7 +29,7 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Settings</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>Register</Text>
+          <Text style={styles.buttonText}>Log Out</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: Colors.light.text,
-    marginLeft: 10, // Add space between icon and text
+    marginLeft: 10,
   },
   email: {
     fontSize: 16,
