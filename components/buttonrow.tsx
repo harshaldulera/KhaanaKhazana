@@ -1,7 +1,14 @@
 import React from 'react';
 import { Colors } from '@/constants/Colors';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { router } from 'expo-router';
+
+const { width: screenWidth } = Dimensions.get('window');
+const buttonPadding = 10;
+const buttonMargin = 5;
+const numberOfButtons = 4;
+const availableWidth = screenWidth - (buttonPadding * 2) - (buttonMargin * (numberOfButtons * 2));
+const buttonWidth = availableWidth / numberOfButtons;
 
 const ButtonRow = () => {
     const handleButtonPress = (buttonType: string) => {
@@ -32,23 +39,25 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 10,
+        padding: buttonPadding,
     },
     button: {
-        flex: 1,
-        marginHorizontal: 5,
+        width: buttonWidth,
+        height: 50, // Ensure buttons have the same height
+        marginHorizontal: buttonMargin,
         backgroundColor: Colors.light.tint,
         paddingVertical: 10,
-        borderRadius: 5,
+        paddingHorizontal: 5, // Add some horizontal padding
+        borderRadius: 8, // Slightly more rounded corners
         borderWidth: 1,
         borderColor: 'white',
         alignItems: 'center',
+        justifyContent: 'center', // Center text vertically
     },
     buttonText: {
         color: '#fff',
-        fontSize: 16,
-        // alignItems: 'center',
-        // justifyContent: 'center',
+        fontSize: 14, // Slightly smaller font size for better fit
+        fontWeight: '600',
         textAlign: 'center',
     },
 });

@@ -7,28 +7,20 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 interface CarouselItem {
     id: string;
     image: string;
-    title: string;
-    description: string;
 }
 
 const data: CarouselItem[] = [
     {
         id: '1',
         image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&auto=format&fit=crop&q=60',
-        title: 'Delicious Food',
-        description: 'Discover amazing recipes and cooking tips'
     },
     {
         id: '2',
         image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=60',
-        title: 'Healthy Living',
-        description: 'Learn about nutritious meals and healthy eating'
     },
     {
         id: '3',
         image: 'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=800&auto=format&fit=crop&q=60',
-        title: 'Cooking Tips',
-        description: 'Expert advice for better cooking'
     },
 ];
 
@@ -40,11 +32,9 @@ const CarouselCards: React.FC = () => {
                 style={styles.image}
                 resizeMode="cover"
             />
-            <View style={styles.contentContainer}>
-                <Text style={styles.title}>{item.title}</Text>
-                <Text style={styles.description}>{item.description}</Text>
+            <View style={styles.buttonContainer}>
                 <TouchableOpacity style={styles.button}>
-                    <Text style={styles.buttonText}>Learn More</Text>
+                    <Text style={styles.buttonText}>Donate Food</Text>
                 </TouchableOpacity>
             </View>
         </View>
@@ -67,7 +57,7 @@ const CarouselCards: React.FC = () => {
 const styles = StyleSheet.create({
     container: {
         marginTop: 15,
-        height: screenHeight * 0.35,
+        height: screenHeight * 0.25,
         justifyContent: 'center',
         paddingBottom: 5,
     },
@@ -90,26 +80,20 @@ const styles = StyleSheet.create({
         width: '100%',
         height: 150,
     },
-    contentContainer: {
+    buttonContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
         padding: 15,
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 8,
-        color: '#333',
-    },
-    description: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 15,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
     button: {
         backgroundColor: Colors.light.tint,
-        paddingVertical: 10,
-        paddingHorizontal: 20,
+        paddingVertical: 12,
+        paddingHorizontal: 30,
         borderRadius: 8,
-        alignSelf: 'flex-start',
+        alignItems: 'center',
     },
     buttonText: {
         color: '#fff',
