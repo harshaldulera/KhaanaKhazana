@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
   TextInput,
   FlatList,
-  ScrollView
+  ScrollView,
 } from "react-native";
 import robinhoodLogo from "../../assets/images/robinhood.jpg";
 import humanaLogo from "../../assets/images/humana.jpg";
@@ -73,12 +73,10 @@ const NgoList = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedNgo, setSelectedNgo] = useState<NgoItem | null>(null);
 
-  const handleSelectNgo = ( ngo: NgoItem ) => {
-    setSelectedNgo(ngo);
-  };
-
-  const handleButtonPress = () => {
-    router.replace("/(tabs)/ngostats");
+  const handleSelectNgo = (ngo: NgoItem) => {
+    if (ngo.id) {
+      router.replace(`/(tabs)/ngodisplay?id=${ngo.id}`);
+    }
   };
 
   return (
@@ -94,24 +92,26 @@ const NgoList = () => {
       <VolunteerCarousel />
       <Text style={styles.title}>Food Required</Text>
       {ngos.map((item) => (
-        <TouchableOpacity key={item.id} onPress={() => handleSelectNgo(item)}>
-        <View style={styles.ngoCard}>
-          <View style={styles.ngoDetailsContainer}> 
-            <Image source={item.logo} style={styles.logo} />
-            <View style={styles.ngoTextContainer}> 
-              <Text style={styles.ngoName}>{item.name}</Text>
-              <View style={styles.mealsContainer}> 
-                <MaterialIcons name="restaurant" size={16} color="#555" /> 
-                <Text style={styles.ngoMeals}>{item.meals}</Text>
-              </View>
-              <View style={styles.collectionTimeContainer}>
-                <MaterialIcons name="alarm" size={16} color="#555" />
-                <Text style={styles.ngoCollectionTime}>{item.collectionTime}</Text>
+        <TouchableOpacity key={item.id} onPress={()=> handleSelectNgo(item)}>
+          <View style={styles.ngoCard}>
+            <View style={styles.ngoDetailsContainer}>
+              <Image source={item.logo} style={styles.logo} />
+              <View style={styles.ngoTextContainer}>
+                <Text style={styles.ngoName}>{item.name}</Text>
+                <View style={styles.mealsContainer}>
+                  <MaterialIcons name="restaurant" size={16} color="#555" />
+                  <Text style={styles.ngoMeals}>{item.meals}</Text>
+                </View>
+                <View style={styles.collectionTimeContainer}>
+                  <MaterialIcons name="alarm" size={16} color="#555" />
+                  <Text style={styles.ngoCollectionTime}>
+                    {item.collectionTime}
+                  </Text>
+                </View>
               </View>
             </View>
           </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
       ))}
     </ScrollView>
   );
@@ -123,15 +123,15 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   ngoCard: {
-    backgroundColor: '#fff', 
-    borderRadius: 10, 
+    backgroundColor: "#fff",
+    borderRadius: 10,
     padding: 15,
     marginBottom: 10,
-    shadowColor: '#000', 
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
-    elevation: 2, 
+    elevation: 2,
   },
   title: {
     fontSize: 24,
@@ -139,34 +139,34 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   ngoDetailsContainer: {
-    flexDirection: 'row', 
-    alignItems: 'center', 
+    flexDirection: "row",
+    alignItems: "center",
   },
   ngoTextContainer: {
-    marginLeft: 5, 
-    flex: 1, 
+    marginLeft: 5,
+    flex: 1,
   },
   mealsContainer: {
-    flexDirection: 'row', 
-    alignItems: 'center', 
+    flexDirection: "row",
+    alignItems: "center",
     marginRight: 5,
   },
   collectionTimeContainer: {
-    flexDirection: 'row', 
-    alignItems: 'center',
-    marginRight: 5, 
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 5,
   },
   ngoMeals: {
     fontSize: 14,
-    color: '#555', 
+    color: "#555",
   },
   ngoCollectionTime: {
     fontSize: 14,
-    color: '#555',
+    color: "#555",
   },
   logo: {
-    width: 70, 
-    height: 70, 
+    width: 70,
+    height: 70,
     marginRight: 10,
   },
   ngoName: {

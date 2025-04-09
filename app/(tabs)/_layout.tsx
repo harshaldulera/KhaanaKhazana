@@ -11,6 +11,9 @@ const TabsLayout = () => {
             <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="index" />
                 <Stack.Screen name="profile" />
+                <Stack.Screen name="ngolist" />
+                <Stack.Screen name="ngodisplay" />
+                <Stack.Screen name="explore" />
             </Stack>
         </View>
     );
