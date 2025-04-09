@@ -15,10 +15,11 @@ const Topbar = () => {
     };
 
     const isProfileScreen = segments[segments.length - 1] === 'profile';
+    const isNgoListScreen = segments[segments.length - 1] === 'ngolist';
 
     return (
         <View style={styles.container}>
-            {isProfileScreen ? (
+            {isProfileScreen || isNgoListScreen ? (
                 <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
                     <MaterialIcons name="arrow-back" size={24} color="black" />
                 </TouchableOpacity>
