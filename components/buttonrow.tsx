@@ -43,16 +43,16 @@ const styles = StyleSheet.create({
     },
     button: {
         width: buttonWidth,
-        height: 50, // Ensure buttons have the same height
+        height: 55, 
         marginHorizontal: buttonMargin,
         backgroundColor: Colors.light.tint,
         paddingVertical: 10,
-        paddingHorizontal: 5, // Add some horizontal padding
-        borderRadius: 8, // Slightly more rounded corners
+        paddingHorizontal: 5, 
+        borderRadius: 8, 
         borderWidth: 1,
         borderColor: 'white',
         alignItems: 'center',
-        justifyContent: 'center', // Center text vertically
+        justifyContent: 'center', 
     },
     buttonText: {
         color: '#fff',

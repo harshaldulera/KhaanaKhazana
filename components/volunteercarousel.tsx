@@ -91,9 +91,9 @@ const styles = StyleSheet.create({
     paddingBottom: 5,
   },
   card: {
-    width: screenWidth * 0.6,
+    width: screenWidth * 0.3,
     alignItems: "center",
-    marginHorizontal: -70,
+    marginHorizontal: 10,
   },
   image: {
     width: 100,

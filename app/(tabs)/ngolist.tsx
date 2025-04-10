@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   TextInput,
   FlatList,
-  ScrollView,
 } from "react-native";
 import robinhoodLogo from "../../assets/images/robinhood.jpg";
 import humanaLogo from "../../assets/images/humana.jpg";
@@ -79,8 +78,12 @@ const NgoList = () => {
     }
   };
 
+  const filteredNgos = ngos.filter(ngo => 
+    ngo.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
@@ -91,29 +94,33 @@ const NgoList = () => {
       </View>
       <VolunteerCarousel />
       <Text style={styles.title}>Food Required</Text>
-      {ngos.map((item) => (
-        <TouchableOpacity key={item.id} onPress={()=> handleSelectNgo(item)}>
-          <View style={styles.ngoCard}>
-            <View style={styles.ngoDetailsContainer}>
-              <Image source={item.logo} style={styles.logo} />
-              <View style={styles.ngoTextContainer}>
-                <Text style={styles.ngoName}>{item.name}</Text>
-                <View style={styles.mealsContainer}>
-                  <MaterialIcons name="restaurant" size={16} color="#555" />
-                  <Text style={styles.ngoMeals}>{item.meals}</Text>
-                </View>
-                <View style={styles.collectionTimeContainer}>
-                  <MaterialIcons name="alarm" size={16} color="#555" />
-                  <Text style={styles.ngoCollectionTime}>
-                    {item.collectionTime}
-                  </Text>
+      <FlatList
+        data={filteredNgos}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => handleSelectNgo(item)}>
+            <View style={styles.ngoCard}>
+              <View style={styles.ngoDetailsContainer}>
+                <Image source={item.logo} style={styles.logo} />
+                <View style={styles.ngoTextContainer}>
+                  <Text style={styles.ngoName}>{item.name}</Text>
+                  <View style={styles.mealsContainer}>
+                    <MaterialIcons name="restaurant" size={16} color="#555" />
+                    <Text style={styles.ngoMeals}>{item.meals}</Text>
+                  </View>
+                  <View style={styles.collectionTimeContainer}>
+                    <MaterialIcons name="alarm" size={16} color="#555" />
+                    <Text style={styles.ngoCollectionTime}>
+                      {item.collectionTime}
+                    </Text>
+                  </View>
                 </View>
               </View>
             </View>
-          </View>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+          </TouchableOpacity>
+        )}
+      />
+    </View>
   );
 };
 
