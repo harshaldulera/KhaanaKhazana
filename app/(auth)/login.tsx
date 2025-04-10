@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from 'react';
 import {
   StyleSheet,
   TextInput,
@@ -14,22 +14,21 @@ import logo from "@/assets/images/logo.png";
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState('donor'); // donor, ngo, volunteer
 
   const handleLogin = () => {
-    // Basic validation
-    if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
-      return;
+    // TODO: Implement actual login logic with GraphQL
+    switch (role) {
+      case 'donor':
+        router.replace('/(donor)/dashboard');
+        break;
+      case 'ngo':
+        router.replace('/(ngo)/dashboard');
+        break;
+      case 'volunteer':
+        router.replace('/(volunteer)/dashboard');
+        break;
     }
-
-    if (!email.includes("@")) {
-      Alert.alert("Error", "Please enter a valid email");
-      return;
-    }
-
-    // Here you would typically make an API call to validate credentials
-    // For now, we'll just navigate to the main app
-    router.replace("/(auth)/registerscreen");
   };
 
   return (
@@ -38,6 +37,26 @@ export default function LoginScreen() {
       <View style={styles.signInBox}>
         <Text style={styles.title}>Welcome Back</Text>
         <Text style={styles.subtitle}>Sign in to continue</Text>
+        <View style={styles.roleSelector}>
+          <TouchableOpacity
+            style={[styles.roleButton, role === 'donor' && styles.selectedRole]}
+            onPress={() => setRole('donor')}
+          >
+            <Text style={styles.roleText}>Donor</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.roleButton, role === 'ngo' && styles.selectedRole]}
+            onPress={() => setRole('ngo')}
+          >
+            <Text style={styles.roleText}>NGO</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.roleButton, role === 'volunteer' && styles.selectedRole]}
+            onPress={() => setRole('volunteer')}
+          >
+            <Text style={styles.roleText}>Volunteer</Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.form}>
           <TextInput
             style={styles.input}
@@ -135,5 +154,25 @@ const styles = StyleSheet.create({
     height: 150,
     marginBottom: 5,
     alignSelf: "center",
+  },
+  roleSelector: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 30,
+  },
+  roleButton: {
+    flex: 1,
+    padding: 10,
+    marginHorizontal: 5,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+    alignItems: 'center',
+  },
+  selectedRole: {
+    backgroundColor: '#FF6B6B',
+  },
+  roleText: {
+    color: '#333',
+    fontWeight: '500',
   },
 });
