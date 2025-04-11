@@ -20,7 +20,7 @@ export default function LoginScreen() {
     // TODO: Implement actual login logic with GraphQL
     switch (role) {
       case 'donor':
-        router.replace('/(donor)/dashboard');
+        router.replace('/(tabs)');
         break;
       case 'ngo':
         router.replace('/(ngo)/dashboard');

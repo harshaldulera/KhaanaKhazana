@@ -21,6 +21,7 @@ export default function DonorLayout() {
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="home" size={size} color={color} />
           ),
+          headerShown: false,
         }}
       />
       <Tabs.Screen
@@ -30,6 +31,7 @@ export default function DonorLayout() {
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="list" size={size} color={color} />
           ),
+          headerShown: false,
         }}
       />
       <Tabs.Screen
@@ -39,6 +41,7 @@ export default function DonorLayout() {
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="user" size={size} color={color} />
           ),
+          headerShown: false,
         }}
       />
     </Tabs>

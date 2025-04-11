@@ -21,6 +21,7 @@ export default function NGOLayout() {
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="gift" size={size} color={color} />
           ),
+          headerShown: false,
         }}
       />
       <Tabs.Screen
@@ -30,17 +31,29 @@ export default function NGOLayout() {
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="check-circle" size={size} color={color} />
           ),
+          headerShown: false,
         }}
       />
       <Tabs.Screen
+        name="history"
+        options={{
+          title: 'History',
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="history" size={size} color={color} />
+          ),
+          headerShown: false,
+        }}
+      />
+      {/* <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="user" size={size} color={color} />
           ),
+          headerShown: false,
         }}
-      />
+      /> */}
     </Tabs>
   );
 } 
