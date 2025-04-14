@@ -72,8 +72,14 @@ const RegisterScreen = () => {
   const [cuisineType, setCuisineType] = useState(null);
 
   const handleRegister = () => {
-    router.replace("/(tabs)");
-  };
+    if (role === "donor") {
+      router.replace("/(donor)/dashboard");
+    } else if (role === "ngo") {
+      router.replace("/(ngo)/dashboard");
+    } else {
+      router.replace("/(volunteer)/dashboard");
+    }
+  }; 
 
   return (
     <ScrollView style={styles.container}>

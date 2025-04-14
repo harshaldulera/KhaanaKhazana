@@ -28,7 +28,7 @@ export default function ProfileScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
-          <FontAwesome name="user-circle" size={80} color="#FF6B6B" />
+          <FontAwesome name="user-circle" size={80} color="#FF6B60" />
         </View>
         <Text style={styles.name}>{mockUserData.name}</Text>
         <Text style={styles.role}>{mockUserData.role.toUpperCase()}</Text>

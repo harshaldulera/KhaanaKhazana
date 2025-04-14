@@ -3,13 +3,14 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'rea
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import SujalPic from "../../assets/images/sujal.jpg"
 
 export default function DonorProfileScreen() {
   // Mock data - replace with actual user data from your auth system
   const userData = {
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 234 567 8900',
+    name: 'Sujal Jain',
+    email: 'sujal16@somaiya.edu',
+    phone: '+91 9137909766',
     totalDonations: 15,
     joinedDate: 'January 2024',
   };
@@ -50,7 +51,7 @@ export default function DonorProfileScreen() {
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('userToken');
-      router.replace('/');
+      router.replace('/(auth)/login');
     } catch (error) {
       console.error('Error logging out:', error);
     }
@@ -62,7 +63,7 @@ export default function DonorProfileScreen() {
       <View style={styles.header}>
         <View style={styles.profileImageContainer}>
           <Image
-            source={{ uri: 'https://via.placeholder.com/150' }}
+            source={SujalPic}
             style={styles.profileImage}
           />
         </View>
