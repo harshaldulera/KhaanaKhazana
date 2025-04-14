@@ -42,8 +42,13 @@ export default function RegisterScreen() {
     }
 
     // TODO: Implement GraphQL mutation for registration
-    Alert.alert('Success', 'Registration successful! Please login.');
-    router.replace('/login');
+    if(formData.role === 'donor') { 
+      router.replace('/(donor)/dashboard');
+    } else if (formData.role === 'ngo') {
+      router.replace('/(ngo)/dashboard');
+    } else {
+      router.replace('/(volunteer)/dashboard');
+    }
   };
 
   return (
