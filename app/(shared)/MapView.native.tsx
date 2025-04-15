@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Dimensions, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, Dimensions, TouchableOpacity, Text, Linking, Platform, Alert } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,34 +16,6 @@ interface MapViewProps {
   updateInterval?: number;
 }
 
-// Function to calculate destination point given start point, distance and bearing
-function calculateDestinationPoint(
-  lat1: number,
-  lon1: number,
-  distance: number, // in kilometers
-  bearing: number  // in degrees
-) {
-  const R = 6371; // Earth's radius in kilometers
-  const lat1Rad = lat1 * Math.PI / 180;
-  const lon1Rad = lon1 * Math.PI / 180;
-  const bearingRad = bearing * Math.PI / 180;
-
-  const lat2Rad = Math.asin(
-    Math.sin(lat1Rad) * Math.cos(distance / R) +
-    Math.cos(lat1Rad) * Math.sin(distance / R) * Math.cos(bearingRad)
-  );
-
-  const lon2Rad = lon1Rad + Math.atan2(
-    Math.sin(bearingRad) * Math.sin(distance / R) * Math.cos(lat1Rad),
-    Math.cos(distance / R) - Math.sin(lat1Rad) * Math.sin(lat2Rad)
-  );
-
-  return {
-    latitude: lat2Rad * 180 / Math.PI,
-    longitude: lon2Rad * 180 / Math.PI
-  };
-}
-
 export default function LocationMapView({ 
   latitude, 
   longitude, 
@@ -57,7 +29,40 @@ export default function LocationMapView({
   const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [routeCoordinates, setRouteCoordinates] = useState<{latitude: number, longitude: number}[]>([]);
-  const [calculatedDestination, setCalculatedDestination] = useState<{latitude: number, longitude: number} | null>(null);
+
+  // Hardcoded destination coordinates
+  const fixedDestination = {
+    latitude: 19.1182343,
+    longitude: 72.9106502
+  };
+
+  const openGoogleMapsNavigation = async () => {
+    if (!userLocation) {
+      Alert.alert('Error', 'Unable to get your current location');
+      return;
+    }
+
+    const origin = `${userLocation.coords.latitude},${userLocation.coords.longitude}`;
+    const destination = `${fixedDestination.latitude},${fixedDestination.longitude}`;
+    
+    const url = Platform.select({
+      ios: `comgooglemaps://?saddr=${origin}&daddr=${destination}&directionsmode=driving`,
+      android: `google.navigation:q=${fixedDestination.latitude},${fixedDestination.longitude}`,
+    });
+
+    try {
+      const supported = await Linking.canOpenURL(url!);
+      if (supported) {
+        await Linking.openURL(url!);
+      } else {
+        // Fallback to web version if app is not installed
+        const webUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
+        await Linking.openURL(webUrl);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Could not open Google Maps');
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -69,15 +74,6 @@ export default function LocationMapView({
 
       let location = await Location.getCurrentPositionAsync({});
       setUserLocation(location);
-
-      // Calculate destination 20 km away at 45 degrees bearing
-      const destination = calculateDestinationPoint(
-        location.coords.latitude,
-        location.coords.longitude,
-        20, // 20 kilometers
-        45  // 45 degrees bearing (northeast)
-      );
-      setCalculatedDestination(destination);
 
       if (showRoute) {
         // Start watching location updates
@@ -109,9 +105,9 @@ export default function LocationMapView({
   }, [showRoute, updateInterval]);
 
   const initialRegion = {
-    latitude: latitude,
-    longitude: longitude,
-    latitudeDelta: 0.5, // Increased to show both points
+    latitude: (fixedDestination.latitude + (userLocation?.coords.latitude || latitude)) / 2,
+    longitude: (fixedDestination.longitude + (userLocation?.coords.longitude || longitude)) / 2,
+    latitudeDelta: 0.5,
     longitudeDelta: 0.5,
   };
 
@@ -123,22 +119,20 @@ export default function LocationMapView({
         initialRegion={initialRegion}
       >
         {/* Destination Marker */}
-        {calculatedDestination && (
-          <Marker
-            coordinate={{
-              latitude: calculatedDestination.latitude,
-              longitude: calculatedDestination.longitude,
-            }}
-            title="Destination (20 km away)"
-            description="This is the destination point 20 km from your location"
-          >
-            <View style={styles.markerContainer}>
-              <View style={styles.marker}>
-                <Ionicons name="location" size={24} color="#FF0000" />
-              </View>
+        <Marker
+          coordinate={{
+            latitude: fixedDestination.latitude,
+            longitude: fixedDestination.longitude,
+          }}
+          title="Destination"
+          description="Mumbai, India"
+        >
+          <View style={styles.markerContainer}>
+            <View style={styles.marker}>
+              <Ionicons name="location" size={24} color="#FF0000" />
             </View>
-          </Marker>
-        )}
+          </View>
+        </Marker>
 
         {/* User Location Marker */}
         {userLocation && (
@@ -158,13 +152,13 @@ export default function LocationMapView({
         )}
 
         {/* Route Line */}
-        {showRoute && routeCoordinates.length > 0 && calculatedDestination && (
+        {showRoute && routeCoordinates.length > 0 && (
           <Polyline
             coordinates={[
               ...routeCoordinates,
               {
-                latitude: calculatedDestination.latitude,
-                longitude: calculatedDestination.longitude
+                latitude: fixedDestination.latitude,
+                longitude: fixedDestination.longitude
               }
             ]}
             strokeWidth={4}
@@ -189,13 +183,19 @@ export default function LocationMapView({
             Longitude: {userLocation.coords.longitude.toFixed(6)}
           </Text>
         )}
-        {calculatedDestination && (
-          <Text style={styles.coordinates}>
-            Destination (20 km away):{'\n'}
-            Latitude: {calculatedDestination.latitude.toFixed(6)}{'\n'}
-            Longitude: {calculatedDestination.longitude.toFixed(6)}
-          </Text>
-        )}
+        <Text style={styles.coordinates}>
+          Destination:{'\n'}
+          Latitude: {fixedDestination.latitude.toFixed(6)}{'\n'}
+          Longitude: {fixedDestination.longitude.toFixed(6)}
+        </Text>
+        
+        <TouchableOpacity 
+          style={styles.navigateButton}
+          onPress={openGoogleMapsNavigation}
+        >
+          <Ionicons name="navigate" size={24} color="#fff" />
+          <Text style={styles.navigateButtonText}>Open in Google Maps</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -276,5 +276,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#888',
     marginBottom: 4,
+  },
+  navigateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4285F4',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  navigateButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 }); 

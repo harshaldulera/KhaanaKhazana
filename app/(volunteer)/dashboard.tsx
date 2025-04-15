@@ -66,13 +66,13 @@ export default function VolunteerDashboard() {
         });
 
         // Show second request after another 5 seconds
-        setTimeout(() => {
-          setPickupRequests(prevRequests => {
-            const newRequest = availablePickupRequests[1];
-            setShowNewRequestAlert(true);
-            return [newRequest, ...prevRequests];
-          });
-        }, 5000);
+      //   setTimeout(() => {
+      //     setPickupRequests(prevRequests => {
+      //       const newRequest = availablePickupRequests[1];
+      //       setShowNewRequestAlert(true);
+      //       return [newRequest, ...prevRequests];
+      //     });
+      //   }, 5000);
       }, 5000);
 
       // Simulate new orders appearing every 30 seconds
