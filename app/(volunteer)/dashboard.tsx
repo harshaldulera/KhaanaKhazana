@@ -3,9 +3,10 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Switch } fro
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '@/constants/Colors';
 
-// Mock data - will be replaced with GraphQL query
-const mockPickupRequests = [
+// Mock data for available pickup requests
+const availablePickupRequests = [
   {
     id: '1',
     foodType: 'Cooked Rice',
@@ -28,13 +29,26 @@ const mockPickupRequests = [
     status: 'pending',
     ngoName: 'Share Food NGO',
   },
+  {
+    id: '3',
+    foodType: 'Vegetable Curry',
+    quantity: '30 servings',
+    pickupAddress: '789 Market St, City',
+    dropoffAddress: 'Homeless Shelter, 123 Care St',
+    pickupTime: '4:00 PM',
+    expiryTime: '10:00 PM',
+    status: 'pending',
+    ngoName: 'Care Foundation',
+  },
 ];
 
 export default function VolunteerDashboard() {
-  const [pickupRequests, setPickupRequests] = useState(mockPickupRequests);
+  const [pickupRequests, setPickupRequests] = useState<typeof availablePickupRequests>([]);
   const [isLocationSharingEnabled, setIsLocationSharingEnabled] = useState(false);
   const [locationPermission, setLocationPermission] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{latitude: number, longitude: number} | null>(null);
+  const [isActive, setIsActive] = useState(false);
+  const [showNewRequestAlert, setShowNewRequestAlert] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -45,8 +59,10 @@ export default function VolunteerDashboard() {
 
   useEffect(() => {
     let locationSubscription: any = null;
+    let orderInterval: NodeJS.Timeout;
+    let initialOrderTimeout: NodeJS.Timeout;
 
-    if (isLocationSharingEnabled && locationPermission) {
+    if (isActive && locationPermission) {
       // Start location updates
       locationSubscription = Location.watchPositionAsync(
         {
@@ -62,14 +78,100 @@ export default function VolunteerDashboard() {
           console.log('Location updated:', { latitude, longitude });
         }
       );
+
+      // Show first request after 5 seconds
+      initialOrderTimeout = setTimeout(() => {
+        setPickupRequests(prevRequests => {
+          const newRequest = availablePickupRequests[0];
+          setShowNewRequestAlert(true);
+          return [newRequest, ...prevRequests];
+        });
+
+        // Show second request after another 5 seconds
+        setTimeout(() => {
+          setPickupRequests(prevRequests => {
+            const newRequest = availablePickupRequests[1];
+            setShowNewRequestAlert(true);
+            return [newRequest, ...prevRequests];
+          });
+        }, 5000);
+      }, 5000);
+
+      // Simulate new orders appearing every 30 seconds
+      orderInterval = setInterval(() => {
+        const randomIndex = Math.floor(Math.random() * availablePickupRequests.length);
+        const newRequest = availablePickupRequests[randomIndex];
+        
+        setPickupRequests(prevRequests => {
+          // Check if request already exists
+          if (prevRequests.some(request => request.id === newRequest.id)) {
+            return prevRequests;
+          }
+          
+          setShowNewRequestAlert(true);
+          return [newRequest, ...prevRequests];
+        });
+      }, 30000);
     }
 
     return () => {
       if (locationSubscription) {
         locationSubscription.then((subscription: any) => subscription.remove());
       }
+      if (orderInterval) {
+        clearInterval(orderInterval);
+      }
+      if (initialOrderTimeout) {
+        clearTimeout(initialOrderTimeout);
+      }
     };
-  }, [isLocationSharingEnabled, locationPermission]);
+  }, [isActive, locationPermission]);
+
+  useEffect(() => {
+    if (showNewRequestAlert) {
+      Alert.alert(
+        'New Pickup Request Available!',
+        'A new pickup request has been added to your dashboard.',
+        [
+          {
+            text: 'OK',
+            onPress: () => setShowNewRequestAlert(false)
+          }
+        ]
+      );
+    }
+  }, [showNewRequestAlert]);
+
+  const toggleVolunteerStatus = () => {
+    if (!locationPermission) {
+      Alert.alert(
+        'Location Permission Required',
+        'Please enable location permissions to become active.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Enable', 
+            onPress: async () => {
+              const { status } = await Location.requestForegroundPermissionsAsync();
+              setLocationPermission(status === 'granted');
+              if (status === 'granted') {
+                setIsActive(true);
+              }
+            }
+          }
+        ]
+      );
+      return;
+    }
+    setIsActive(!isActive);
+    if (!isActive) {
+      // Clear any existing requests when becoming active
+      setPickupRequests([]);
+    } else {
+      // Clear requests when becoming inactive
+      setPickupRequests([]);
+    }
+  };
 
   const handleAcceptPickup = (requestId: string) => {
     // TODO: Implement GraphQL mutation to accept pickup request
@@ -79,6 +181,8 @@ export default function VolunteerDashboard() {
         ? { ...request, status: 'accepted' }
         : request
     ));
+    // Enable location sharing when accepting pickup
+    setIsLocationSharingEnabled(true);
   };
 
   const handleFoodQualityCheck = (requestId: string, isApproved: boolean) => {
@@ -137,7 +241,7 @@ export default function VolunteerDashboard() {
     setIsLocationSharingEnabled(!isLocationSharingEnabled);
   };
 
-  const renderPickupRequest = ({ item }: { item: typeof mockPickupRequests[0] }) => (
+  const renderPickupRequest = ({ item }: { item: typeof availablePickupRequests[0] }) => (
     <View style={styles.requestCard}>
       <View style={styles.requestHeader}>
         <Text style={styles.foodType}>{item.foodType}</Text>
@@ -162,22 +266,46 @@ export default function VolunteerDashboard() {
       )}
       
       {item.status === 'accepted' && (
-        <View style={styles.qualityCheckContainer}>
-          <Text style={styles.qualityCheckTitle}>Food Quality Check</Text>
-          <View style={styles.qualityCheckButtons}>
-            <TouchableOpacity 
-              style={[styles.qualityButton, styles.approveButton]}
-              onPress={() => handleFoodQualityCheck(item.id, true)}
-            >
-              <Text style={styles.qualityButtonText}>Approve</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.qualityButton, styles.rejectButton]}
-              onPress={() => handleFoodQualityCheck(item.id, false)}
-            >
-              <Text style={styles.qualityButtonText}>Reject</Text>
-            </TouchableOpacity>
+        <View>
+          <View style={styles.qualityCheckContainer}>
+            <Text style={styles.qualityCheckTitle}>Food Quality Check</Text>
+            <View style={styles.qualityCheckButtons}>
+              <TouchableOpacity 
+                style={[styles.qualityButton, styles.approveButton]}
+                onPress={() => handleFoodQualityCheck(item.id, true)}
+              >
+                <Text style={styles.qualityButtonText}>Approve</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.qualityButton, styles.rejectButton]}
+                onPress={() => handleFoodQualityCheck(item.id, false)}
+              >
+                <Text style={styles.qualityButtonText}>Reject</Text>
+              </TouchableOpacity>
+            </View>
           </View>
+          
+          {currentLocation && (
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => router.push({
+                pathname: '/(shared)/location-map',
+                params: {
+                  latitude: currentLocation?.latitude,
+                  longitude: currentLocation?.longitude,
+                  title: "Your Current Location",
+                  description: "This is your current position",
+                  destinationLatitude: 28.6139, // Example coordinates - replace with actual pickup location
+                  destinationLongitude: 77.2090,
+                  showRoute: "true",
+                  updateInterval: "5000"
+                }
+              })}
+            >
+              <Ionicons name="location" size={24} color="#007AFF" />
+              <Text style={styles.actionButtonText}>View Route</Text>
+            </TouchableOpacity>
+          )}
         </View>
       )}
       
@@ -192,6 +320,28 @@ export default function VolunteerDashboard() {
               thumbColor={isLocationSharingEnabled ? '#2196F3' : '#f4f3f4'}
             />
           </View>
+          
+          {currentLocation && (
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => router.push({
+                pathname: '/(shared)/location-map',
+                params: {
+                  latitude: currentLocation?.latitude,
+                  longitude: currentLocation?.longitude,
+                  title: "Your Current Location",
+                  description: "This is your current position",
+                  destinationLatitude: 28.6139, // Example coordinates - replace with actual dropoff location
+                  destinationLongitude: 77.2090,
+                  showRoute: "true",
+                  updateInterval: "5000"
+                }
+              })}
+            >
+              <Ionicons name="location" size={24} color="#007AFF" />
+              <Text style={styles.actionButtonText}>View Route</Text>
+            </TouchableOpacity>
+          )}
           
           <TouchableOpacity 
             style={styles.completeButton}
@@ -218,6 +368,15 @@ export default function VolunteerDashboard() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.statusContainer}>
+        <Text style={styles.statusText}>Volunteer Status: {isActive ? 'Active' : 'Inactive'}</Text>
+        <Switch
+          value={isActive}
+          onValueChange={toggleVolunteerStatus}
+          trackColor={{ false: '#767577', true: '#81b0ff' }}
+          thumbColor={isActive ? '#2196F3' : '#f4f3f4'}
+        />
+      </View>
       <Text style={styles.title}>Available Pickup Requests</Text>
       <FlatList
         data={pickupRequests}
@@ -249,36 +408,52 @@ export default function VolunteerDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 16,
+    backgroundColor: '#f5f5f5',
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
     backgroundColor: '#fff',
+    borderRadius: 8,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  statusText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    margin: 20,
-    color: '#FF6B6B',
+    marginBottom: 16,
+    color: '#333',
   },
   listContainer: {
-    padding: 20,
+    paddingBottom: 16,
   },
   requestCard: {
     backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
   },
   requestHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   foodType: {
     fontSize: 18,
@@ -289,38 +464,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
+  detailsContainer: {
+    marginBottom: 16,
+  },
   ngoName: {
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: '600',
     color: '#333',
-    marginBottom: 10,
-  },
-  detailsContainer: {
-    marginBottom: 15,
+    marginBottom: 8,
   },
   detailText: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 5,
+    marginBottom: 4,
   },
   acceptButton: {
-    backgroundColor: '#FF6B6B',
+    backgroundColor: Colors.light.tint,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 6,
     alignItems: 'center',
   },
   acceptButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   qualityCheckContainer: {
-    marginTop: 10,
+    marginTop: 12,
   },
   qualityCheckTitle: {
     fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 10,
+    fontWeight: '600',
+    marginBottom: 8,
     color: '#333',
   },
   qualityCheckButtons: {
@@ -330,83 +505,79 @@ const styles = StyleSheet.create({
   qualityButton: {
     flex: 1,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 6,
     alignItems: 'center',
-    marginHorizontal: 5,
+    marginHorizontal: 4,
   },
   approveButton: {
     backgroundColor: '#4CAF50',
   },
   rejectButton: {
-    backgroundColor: '#f44336',
+    backgroundColor: '#F44336',
   },
   qualityButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
-  },
-  statusBadge: {
-    backgroundColor: '#2196F3',
-    padding: 8,
-    borderRadius: 6,
-    alignSelf: 'flex-start',
-  },
-  rejectedBadge: {
-    backgroundColor: '#f44336',
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   locationSharingContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#f0f8ff',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   locationSharingText: {
     fontSize: 16,
-    fontWeight: '500',
     color: '#333',
   },
   completeButton: {
     backgroundColor: '#4CAF50',
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 6,
     alignItems: 'center',
   },
   completeButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   completedBadge: {
     backgroundColor: '#4CAF50',
     padding: 8,
-    borderRadius: 6,
-    alignSelf: 'flex-start',
+    borderRadius: 4,
+    alignItems: 'center',
   },
   completedText: {
     color: '#fff',
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
+  },
+  statusBadge: {
+    padding: 8,
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  rejectedBadge: {
+    backgroundColor: '#F44336',
   },
   actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#fff',
     padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    flexDirection: 'row',
-    margin: 20,
+    borderRadius: 6,
+    marginTop: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   actionButtonText: {
-    color: '#007AFF',
+    marginLeft: 8,
     fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 10,
+    color: '#007AFF',
+    fontWeight: '600',
   },
 }); 

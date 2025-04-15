@@ -1,20 +1,63 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Dimensions, TouchableOpacity, Text } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
 interface MapViewProps {
   latitude: number;
   longitude: number;
   title?: string;
   description?: string;
+  destinationLatitude?: number;
+  destinationLongitude?: number;
+  showRoute?: boolean;
+  updateInterval?: number;
 }
 
-export default function LocationMapView({ latitude, longitude, title, description }: MapViewProps) {
+// Function to calculate destination point given start point, distance and bearing
+function calculateDestinationPoint(
+  lat1: number,
+  lon1: number,
+  distance: number, // in kilometers
+  bearing: number  // in degrees
+) {
+  const R = 6371; // Earth's radius in kilometers
+  const lat1Rad = lat1 * Math.PI / 180;
+  const lon1Rad = lon1 * Math.PI / 180;
+  const bearingRad = bearing * Math.PI / 180;
+
+  const lat2Rad = Math.asin(
+    Math.sin(lat1Rad) * Math.cos(distance / R) +
+    Math.cos(lat1Rad) * Math.sin(distance / R) * Math.cos(bearingRad)
+  );
+
+  const lon2Rad = lon1Rad + Math.atan2(
+    Math.sin(bearingRad) * Math.sin(distance / R) * Math.cos(lat1Rad),
+    Math.cos(distance / R) - Math.sin(lat1Rad) * Math.sin(lat2Rad)
+  );
+
+  return {
+    latitude: lat2Rad * 180 / Math.PI,
+    longitude: lon2Rad * 180 / Math.PI
+  };
+}
+
+export default function LocationMapView({ 
+  latitude, 
+  longitude, 
+  title, 
+  description,
+  destinationLatitude,
+  destinationLongitude,
+  showRoute = false,
+  updateInterval = 5000
+}: MapViewProps) {
   const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [routeCoordinates, setRouteCoordinates] = useState<{latitude: number, longitude: number}[]>([]);
+  const [calculatedDestination, setCalculatedDestination] = useState<{latitude: number, longitude: number} | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -26,14 +69,50 @@ export default function LocationMapView({ latitude, longitude, title, descriptio
 
       let location = await Location.getCurrentPositionAsync({});
       setUserLocation(location);
+
+      // Calculate destination 20 km away at 45 degrees bearing
+      const destination = calculateDestinationPoint(
+        location.coords.latitude,
+        location.coords.longitude,
+        20, // 20 kilometers
+        45  // 45 degrees bearing (northeast)
+      );
+      setCalculatedDestination(destination);
+
+      if (showRoute) {
+        // Start watching location updates
+        const subscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            timeInterval: updateInterval,
+            distanceInterval: 10,
+          },
+          (location) => {
+            setUserLocation(location);
+            // Update route coordinates
+            setRouteCoordinates(prev => {
+              const newCoordinates = [...prev, {
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude
+              }];
+              // Keep only last 100 points to prevent memory issues
+              return newCoordinates.slice(-100);
+            });
+          }
+        );
+
+        return () => {
+          subscription.remove();
+        };
+      }
     })();
-  }, []);
+  }, [showRoute, updateInterval]);
 
   const initialRegion = {
     latitude: latitude,
     longitude: longitude,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
+    latitudeDelta: 0.5, // Increased to show both points
+    longitudeDelta: 0.5,
   };
 
   return (
@@ -44,20 +123,22 @@ export default function LocationMapView({ latitude, longitude, title, descriptio
         initialRegion={initialRegion}
       >
         {/* Destination Marker */}
-        <Marker
-          coordinate={{
-            latitude: latitude,
-            longitude: longitude,
-          }}
-          title={title || "Location"}
-          description={description}
-        >
-          <View style={styles.markerContainer}>
-            <View style={styles.marker}>
-              <Ionicons name="location" size={24} color="#FF0000" />
+        {calculatedDestination && (
+          <Marker
+            coordinate={{
+              latitude: calculatedDestination.latitude,
+              longitude: calculatedDestination.longitude,
+            }}
+            title="Destination (20 km away)"
+            description="This is the destination point 20 km from your location"
+          >
+            <View style={styles.markerContainer}>
+              <View style={styles.marker}>
+                <Ionicons name="location" size={24} color="#FF0000" />
+              </View>
             </View>
-          </View>
-        </Marker>
+          </Marker>
+        )}
 
         {/* User Location Marker */}
         {userLocation && (
@@ -75,6 +156,21 @@ export default function LocationMapView({ latitude, longitude, title, descriptio
             </View>
           </Marker>
         )}
+
+        {/* Route Line */}
+        {showRoute && routeCoordinates.length > 0 && calculatedDestination && (
+          <Polyline
+            coordinates={[
+              ...routeCoordinates,
+              {
+                latitude: calculatedDestination.latitude,
+                longitude: calculatedDestination.longitude
+              }
+            ]}
+            strokeWidth={4}
+            strokeColor="#007AFF"
+          />
+        )}
       </MapView>
 
       <TouchableOpacity 
@@ -85,12 +181,21 @@ export default function LocationMapView({ latitude, longitude, title, descriptio
       </TouchableOpacity>
 
       <View style={styles.infoCard}>
-        <Text style={styles.title}>{title || "Location Details"}</Text>
-        {description && <Text style={styles.description}>{description}</Text>}
-        <Text style={styles.coordinates}>
-          Latitude: {latitude.toFixed(6)}{'\n'}
-          Longitude: {longitude.toFixed(6)}
-        </Text>
+        <Text style={styles.title}>Route Information</Text>
+        {userLocation && (
+          <Text style={styles.coordinates}>
+            Your Location:{'\n'}
+            Latitude: {userLocation.coords.latitude.toFixed(6)}{'\n'}
+            Longitude: {userLocation.coords.longitude.toFixed(6)}
+          </Text>
+        )}
+        {calculatedDestination && (
+          <Text style={styles.coordinates}>
+            Destination (20 km away):{'\n'}
+            Latitude: {calculatedDestination.latitude.toFixed(6)}{'\n'}
+            Longitude: {calculatedDestination.longitude.toFixed(6)}
+          </Text>
+        )}
       </View>
     </View>
   );
@@ -170,5 +275,6 @@ const styles = StyleSheet.create({
   coordinates: {
     fontSize: 12,
     color: '#888',
+    marginBottom: 4,
   },
 }); 
