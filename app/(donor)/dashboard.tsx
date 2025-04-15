@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Stack } from 'expo-router';
-import { Button, ScrollView } from "react-native";
 import { Colors } from "../../constants/Colors";
 import CarouselCards from "@/components/carouselcards";
 import ButtonRow from "@/components/buttonrow";
@@ -9,20 +8,19 @@ import EventHighlights from "@/components/eventhighlights";
 
 export default function DonorDashboard() {
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <Stack.Screen
         options={{
           title: 'Donor Dashboard',
           headerShown: false,
         }}
       />
-      {/* <Text style={styles.title}>Welcome to Donor Dashboard</Text> */}
-      <ScrollView>
+      {/* <ScrollView> */}
         <CarouselCards />
         <ButtonRow />
         <EventHighlights />
-      </ScrollView>
-    </View>
+      {/* </ScrollView> */}
+    </ScrollView>
   );
 }
 

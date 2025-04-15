@@ -10,7 +10,7 @@ const authLink = setContext((_, { headers }) => {
     headers: {
       ...headers,
       'content-type': 'application/json',
-      'x-hasura-admin-secret': 'nPqHDQqEGFZVEWVkYDxEGXXQPPXZBPXSPWQGZQZXCQWEGCQW',
+      'x-hasura-admin-secret': 'AWkCrsqTzpi6Okx04n526A1YVSOivw2fFW7shcOeyoPCnoCDMbIYzkt0IpjfRVZm',
     }
   }
 });

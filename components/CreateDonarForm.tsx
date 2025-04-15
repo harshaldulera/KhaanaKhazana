@@ -15,7 +15,7 @@ export function CreateDonarForm() {
 
   const [createDonar, { loading }] = useMutation(CREATE_DONAR, {
     onCompleted: () => {
-      Alert.alert('Success', 'Donar created successfully!');
+      Alert.alert('Success', 'Donor created successfully!');
       setFormData({
         name: '',
         email: '',
@@ -45,7 +45,7 @@ export function CreateDonarForm() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Create New Donar</Text>
+      <Text style={styles.title}>Create New Donor</Text>
       
       <TextInput
         style={styles.input}

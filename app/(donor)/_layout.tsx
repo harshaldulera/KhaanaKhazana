@@ -46,6 +46,16 @@ export default function DonorLayout() {
           headerShown: false,
         }}
       />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'New Donor',
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="circle" size={size} color={color} />
+          ),
+          headerShown: false,
+        }}
+      />
     </Tabs>
   );
 } 
