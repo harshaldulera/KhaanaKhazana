@@ -27,11 +27,11 @@ export default function DonorLayout() {
         }}
       />
       <Tabs.Screen
-        name="history"
+        name="index"
         options={{
-          title: 'History',
+          title: 'Donate Form',
           tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="list" size={size} color={color} />
+            <FontAwesome name="circle" size={size} color={color} />
           ),
           headerShown: false,
         }}
@@ -46,6 +46,16 @@ export default function DonorLayout() {
           headerShown: false,
         }}
       />
+        <Tabs.Screen
+          name="history"
+          options={{
+            title: 'History',
+            tabBarIcon: ({ color, size }) => (
+              <FontAwesome name="list" size={size} color={color} />
+            ),
+            headerShown: false,
+          }}
+        />
       <Tabs.Screen
         name="ngodisplay"
         options={{
@@ -66,16 +76,7 @@ export default function DonorLayout() {
           headerShown: false,
         }}
       />
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Donate Form',
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="circle" size={size} color={color} />
-          ),
-          headerShown: false,
-        }}
-      />
+      
     </Tabs>
   );
 } 

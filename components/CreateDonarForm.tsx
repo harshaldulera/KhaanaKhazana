@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useMutation } from '@apollo/client';
-import { CREATE_DONAR } from '../graphql/mutations';
+import { CREATE_DONOR } from '../graphql/mutations';
 
-export function CreateDonarForm() {
+export function CreateDonorForm() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -13,7 +13,7 @@ export function CreateDonarForm() {
     CusineType: '',
   });
 
-  const [createDonar, { loading }] = useMutation(CREATE_DONAR, {
+  const [createDonor, { loading }] = useMutation(CREATE_DONOR, {
     onCompleted: () => {
       Alert.alert('Success', 'Donor created successfully!');
       setFormData({
@@ -36,7 +36,7 @@ export function CreateDonarForm() {
       return;
     }
 
-    createDonar({
+    createDonor({
       variables: {
         input: formData,
       },
@@ -97,7 +97,7 @@ export function CreateDonarForm() {
         disabled={loading}
       >
         <Text style={styles.buttonText}>
-          {loading ? 'Creating...' : 'Create Donar'}
+          {loading ? 'Creating...' : 'Create Donor'}
         </Text>
       </TouchableOpacity>
     </View>

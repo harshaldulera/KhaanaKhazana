@@ -1,17 +1,16 @@
 import { gql } from '@apollo/client';
 
-export const CREATE_DONAR = gql`
-  mutation CreateDonar($input: CreateDonarInput!) {
-    createDonar(input: $input) {
+export const CREATE_DONOR = gql`
+  mutation InsertDonor($input: InsertDonorInput!) {
+    InsertDonor(input: $input) {
       id
       name
       email
       address
-      city
-      state
-      pinCode
-      aadharNumber
-      cuisineType
+      phone_number
+      address
+      kyc_document
+      cuisine_type
     }
   }
 `;
