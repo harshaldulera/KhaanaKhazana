@@ -16,7 +16,7 @@ export default function DonorDashboard() {
           headerShown: false,
         }}
       />
-      <Text style={styles.title}>Welcome to Donor Dashboard</Text>
+      {/* <Text style={styles.title}>Welcome to Donor Dashboard</Text> */}
       <ScrollView>
         <CarouselCards />
         <ButtonRow />
