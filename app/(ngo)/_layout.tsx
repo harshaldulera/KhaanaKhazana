@@ -44,16 +44,26 @@ export default function NGOLayout() {
           headerShown: false,
         }}
       />
-      {/* <Tabs.Screen
+      <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: 'NGO Profile',
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="user" size={size} color={color} />
           ),
           headerShown: false,
         }}
-      /> */}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="gear" size={size} color={color} />
+          ),
+          headerShown: false,
+        }}
+      />
     </Tabs>
   );
 } 
