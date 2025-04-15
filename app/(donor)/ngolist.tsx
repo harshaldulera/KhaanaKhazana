@@ -74,7 +74,7 @@ const NgoList = () => {
 
   const handleSelectNgo = (ngo: NgoItem) => {
     if (ngo.id) {
-      router.replace(`/(tabs)/ngodisplay?id=${ngo.id}`);
+      router.replace(`/(donor)/ngodisplay?id=${ngo.id}`);
     }
   };
 

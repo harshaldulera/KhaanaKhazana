@@ -47,9 +47,29 @@ export default function DonorLayout() {
         }}
       />
       <Tabs.Screen
+        name="ngodisplay"
+        options={{
+          title: 'NGO Details',
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="circle" size={size} color={color} />
+          ),
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
+        name="ngolist"
+        options={{
+          title: 'NGO List',
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name="circle" size={size} color={color} />
+          ),
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
         name="index"
         options={{
-          title: 'New Donor',
+          title: 'Donate Form',
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="circle" size={size} color={color} />
           ),

@@ -13,7 +13,11 @@ const buttonWidth = availableWidth / numberOfButtons;
 const ButtonRow = () => {
     const handleButtonPress = (buttonType: string) => {
         console.log(`${buttonType} button pressed`);
-        router.replace("/(tabs)/ngolist");
+        if(buttonType === 'Donate Food') {
+            router.replace("/(donor)");
+        } else {
+            router.replace("/(donor)/ngolist");
+        }
     };
 
     return (
