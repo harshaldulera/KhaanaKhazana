@@ -6,12 +6,15 @@ import {
   TouchableOpacity,
   StyleSheet,
   Button,
-  ScrollView
+  ScrollView,
+  Alert
 } from "react-native";
 import { Colors } from "@/constants/Colors";
 import { Dropdown } from "react-native-element-dropdown";
 import { AntDesign } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useMutation } from '@apollo/client';
+import { CREATE_DONAR, CREATE_NGO, CREATE_VOLUNTEER } from '../../graphql/mutations';
 
 const roles = [
   { label: "Donor", value: "donor" },
@@ -71,8 +74,107 @@ const RegisterScreen = () => {
   const [preferredDonationTypes, setPreferredDonationTypes] = useState("");
   const [cuisineType, setCuisineType] = useState(null);
 
-  const handleRegister = () => {
-    router.replace("/(tabs)");
+  const [createDonar] = useMutation(CREATE_DONAR);
+  const [createNGO] = useMutation(CREATE_NGO);
+  const [createVolunteer] = useMutation(CREATE_VOLUNTEER);
+
+  const handleRegister = async () => {
+    try {
+      if (!role) {
+        Alert.alert('Error', 'Please select a role');
+        return;
+      }
+
+      let response;
+      switch (role) {
+        case 'donor':
+          if (!fullName || !email || !password || !address || !city || !state || !pinCode || !aadharNumber) {
+            Alert.alert('Error', 'Please fill in all required fields');
+            return;
+          }
+          response = await createDonar({
+            variables: {
+              input: {
+                name: fullName,
+                email,
+                password,
+                address,
+                city,
+                state,
+                pinCode,
+                aadharNumber,
+                cuisineType: cuisineType
+              }
+            }
+          });
+          break;
+
+        case 'ngo':
+          if (!ngoName || !registrationNumber || !yearOfEstablishment || !ngoType || !contactNumber || !email || !address || !state || !city || !pinCode) {
+            Alert.alert('Error', 'Please fill in all required fields');
+            return;
+          }
+          response = await createNGO({
+            variables: {
+              input: {
+                name: ngoName,
+                registrationNumber,
+                yearOfEstablishment,
+                type: ngoType,
+                website,
+                description,
+                contactNumber,
+                alternateContactNumber,
+                email,
+                address,
+                state,
+                city,
+                pinCode,
+                areasOfOperation: areasOfOperationSelected,
+                preferredDonationTypes,
+                pickupCapacity,
+                storageFacility
+              }
+            }
+          });
+          break;
+
+        case 'volunteer':
+          if (!fullName || !email || !password || !contactNumber || !address || !city || !state || !pinCode) {
+            Alert.alert('Error', 'Please fill in all required fields');
+            return;
+          }
+          response = await createVolunteer({
+            variables: {
+              input: {
+                name: fullName,
+                email,
+                password,
+                contactNumber,
+                address,
+                city,
+                state,
+                pinCode
+              }
+            }
+          });
+          break;
+      }
+
+      if (response?.data) {
+        Alert.alert('Success', 'Registration successful!');
+        // Navigate to appropriate dashboard based on role
+        if (role === 'donor') {
+          router.replace("/(donor)/dashboard");
+        } else if (role === 'ngo') {
+          router.replace("/(ngo)/dashboard");
+        } else if (role === 'volunteer') {
+          router.replace("/(volunteer)/dashboard");
+        }
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error?.message || 'Registration failed. Please try again.');
+    }
   };
 
   return (

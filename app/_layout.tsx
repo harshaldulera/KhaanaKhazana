@@ -1,6 +1,8 @@
-import { Stack } from "expo-router";
 import { useEffect, useState } from "react";
 import { View, ActivityIndicator } from "react-native";
+import { ApolloProvider } from '@apollo/client';
+import client from '../lib/apollo-client';
+import { Stack } from 'expo-router';
 
 export default function RootLayout() {
   const [isLoading, setIsLoading] = useState(true);
@@ -24,41 +26,49 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack
-      screenOptions={{
-        headerStyle: {
-          backgroundColor: '#FF6B6B',
-        },
-        headerTintColor: '#fff',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-      }}
-    >
-      <Stack.Screen
-        name="(auth)"
-        options={{
-          headerShown: false,
+    <ApolloProvider client={client}>
+      <Stack
+        screenOptions={{
+          headerStyle: {
+            backgroundColor: '#FF6B6B',
+          },
+          headerTintColor: '#fff',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
         }}
-      />
-      <Stack.Screen
-        name="(donor)"
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="(ngo)"
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="(volunteer)"
-        options={{
-          headerShown: false,
-        }}
-      />
-    </Stack>
+      >
+        <Stack.Screen
+          name="(auth)"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="(donor)"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="(ngo)"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="(volunteer)"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="(shared)"
+          options={{
+            headerShown: false,
+          }}
+        />
+      </Stack>
+    </ApolloProvider>
   );
 }

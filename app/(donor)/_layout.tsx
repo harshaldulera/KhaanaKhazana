@@ -25,9 +25,9 @@ export default function DonorLayout() {
         }}
       />
       <Tabs.Screen
-        name="requests"
+        name="history"
         options={{
-          title: 'My Requests',
+          title: 'History',
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="list" size={size} color={color} />
           ),
