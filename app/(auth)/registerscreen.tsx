@@ -78,7 +78,7 @@ const RegisterScreen = () => {
   const [kycDocumentLink, setKycDocumentLink] = useState("");
 
   const [createDonor] = useMutation(CREATE_DONOR);
-  const [createDonor] = useMutation(CREATE_DONOR);
+  // const [createDonor] = useMutation(CREATE_DONOR);
   const [createNGO] = useMutation(CREATE_NGO);
   const [createVolunteer] = useMutation(CREATE_VOLUNTEER);
 
@@ -96,7 +96,7 @@ const RegisterScreen = () => {
             Alert.alert('Error', 'Please fill in all required fields');
             return;
           }
-          response = await createDonor({
+          // response = await createDonor({
           response = await createDonor({
             variables: {
               input: {
@@ -106,7 +106,7 @@ const RegisterScreen = () => {
                 phone_number: contactNumber,
                 address,
                 cuisine_type: cuisineType || null,
-                kyc_document: aadharNumber || "pending"
+                kyc_document: "pending"
               }
             }
           });

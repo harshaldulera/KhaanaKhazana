@@ -159,7 +159,7 @@ export default function DonateScreen() {
         <Stack.Screen
           options={{
             title: 'Donate Food',
-            headerShown: true,
+            headerShown: false,
           }}
         />
 

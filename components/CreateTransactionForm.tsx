@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
 import { useMutation } from '@apollo/client';
-import { CREATE_TRANSACTION } from '../graphql/mutations';
+import { CREATE_DONATION } from '../graphql/mutations';
 import { TransactionStatus } from '../types/graphql';
 import { Colors } from '@/constants/Colors';
 import * as Animatable from 'react-native-animatable';
@@ -30,7 +30,7 @@ export function CreateTransactionForm() {
     volunteer_id: '',
   });
 
-  const [createTransaction, { loading }] = useMutation(CREATE_TRANSACTION, {
+  const [createTransaction, { loading }] = useMutation(CREATE_DONATION, {
     onCompleted: () => {
       setShowSuccess(true);
       

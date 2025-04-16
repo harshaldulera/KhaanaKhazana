@@ -12,6 +12,7 @@ export default function DonorLayout() {
           backgroundColor: '#fff',
           borderTopWidth: 1,
           borderTopColor: '#eee',
+          // display: 'none',
         },
       }}
     >
@@ -29,11 +30,7 @@ export default function DonorLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Donate Form',
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="circle" size={size} color={color} />
-          ),
-          headerShown: false,
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -72,6 +69,16 @@ export default function DonorLayout() {
           title: 'NGO List',
           tabBarIcon: ({ color, size }) => (
             <FontAwesome name="circle" size={size} color={color} />
+          ),
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen 
+        name='donate'
+        options={{
+          title: 'Donate',
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome name='shopping-cart' size={size} color={color} />
           ),
           headerShown: false,
         }}

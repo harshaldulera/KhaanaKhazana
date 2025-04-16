@@ -14,7 +14,7 @@ const ButtonRow = () => {
     const handleButtonPress = (buttonType: string) => {
         console.log(`${buttonType} button pressed`);
         if(buttonType === 'Donate Food') {
-            router.replace("/(donor)");
+            router.replace("/(donor)/donate");
         } else {
             router.replace("/(donor)/ngolist");
         }

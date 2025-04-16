@@ -2,8 +2,8 @@ import { gql } from "@apollo/client";
 
 // User registration mutations
 export const CREATE_DONOR = gql`
-  mutation CreateDonor($input: donor_insert_input!) {
-    insert_donor_one(object: $input) {
+  mutation CreateDonor($input: donar_insert_input!) {
+    insert_donar_one(object: $input) {
       id
       name
       email
@@ -112,7 +112,6 @@ export const CREATE_DONATION = gql`
       serving_quantity
       food_type
       created_at
-      status: PENDING
     }
   }
 `;
@@ -162,7 +161,7 @@ export const UPDATE_VOLUNTEER_LOCATION = gql`
 
 // Query donations (no changes required)
 export const GET_DONOR_TRANSACTIONS = gql`
-  query GetDonorTransactions($donor_id: Int!) {
+  query GetDonorTransactions($donor_id: bigint!) {
     donar_transaction(
       where: { donar_id: { _eq: $donor_id } }
       order_by: { created_at: desc }
@@ -173,20 +172,18 @@ export const GET_DONOR_TRANSACTIONS = gql`
       status
       created_at
       pickup_time
-      expiry_time
-      quantity
+      serving_quantity
       food_type
       ngo {
         id
         name
-        phoneNumber
+        poc_phone_number
       }
       volunteer {
         id
         name
-        phoneNumber
-        current_latitude
-        current_longitude
+        phone_number
+        current_location
       }
     }
   }
