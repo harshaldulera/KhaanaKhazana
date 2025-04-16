@@ -14,7 +14,7 @@ import { Dropdown } from "react-native-element-dropdown";
 import { AntDesign } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useMutation } from '@apollo/client';
-import { CREATE_DONAR, CREATE_NGO, CREATE_VOLUNTEER } from '../../graphql/mutations';
+import { CREATE_DONOR, CREATE_NGO, CREATE_VOLUNTEER } from '../../graphql/mutations';
 
 const roles = [
   { label: "Donor", value: "donor" },
@@ -74,7 +74,7 @@ const RegisterScreen = () => {
   const [preferredDonationTypes, setPreferredDonationTypes] = useState("");
   const [cuisineType, setCuisineType] = useState(null);
 
-  const [createDonar] = useMutation(CREATE_DONAR);
+  const [createDonor] = useMutation(CREATE_DONOR);
   const [createNGO] = useMutation(CREATE_NGO);
   const [createVolunteer] = useMutation(CREATE_VOLUNTEER);
 
@@ -88,22 +88,20 @@ const RegisterScreen = () => {
       let response;
       switch (role) {
         case 'donor':
-          if (!fullName || !email || !password || !address || !city || !state || !pinCode || !aadharNumber) {
+          if (!fullName || !email || !password || !address || !contactNumber) {
             Alert.alert('Error', 'Please fill in all required fields');
             return;
           }
-          response = await createDonar({
+          response = await createDonor({
             variables: {
               input: {
                 name: fullName,
                 email,
                 password,
+                phone_number: contactNumber,
                 address,
-                city,
-                state,
-                pinCode,
-                aadharNumber,
-                cuisineType: cuisineType
+                cuisine_type: cuisineType || null,
+                kyc_document: aadharNumber || "pending"
               }
             }
           });
@@ -123,13 +121,16 @@ const RegisterScreen = () => {
                 type: ngoType,
                 website,
                 description,
-                contactNumber,
-                alternateContactNumber,
+                phoneNumber: contactNumber, 
+                pocPhoneNumber: alternateContactNumber,
+                pocName: fullName,
                 email,
+                password,
                 address,
                 state,
                 city,
                 pinCode,
+                kycdoc: registrationNumber,
                 areasOfOperation: areasOfOperationSelected,
                 preferredDonationTypes,
                 pickupCapacity,
@@ -150,11 +151,13 @@ const RegisterScreen = () => {
                 name: fullName,
                 email,
                 password,
-                contactNumber,
-                address,
+                phoneNumber: contactNumber,
+                currentLocation: address,
                 city,
                 state,
-                pinCode
+                pinCode,
+                kycdoc: aadharNumber,
+                availability: "Available"
               }
             }
           });
@@ -326,6 +329,20 @@ const RegisterScreen = () => {
           />
           <TextInput
             style={styles.input}
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+          <TextInput
+            style={styles.input}
             placeholder="NGO Description / Mission Statement"
             value={description}
             onChangeText={setDescription}
@@ -350,13 +367,6 @@ const RegisterScreen = () => {
             value={alternateContactNumber}
             onChangeText={setAlternateContactNumber}
             keyboardType="phone-pad"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Email Address (verified)"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
           />
           <TextInput
             style={styles.input}
@@ -475,6 +485,13 @@ const RegisterScreen = () => {
           />
           <TextInput
             style={styles.input}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+          <TextInput
+            style={styles.input}
             placeholder="Phone Number"
             value={contactNumber}
             onChangeText={setContactNumber}
@@ -562,5 +579,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
 export default RegisterScreen;
+

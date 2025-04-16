@@ -5,7 +5,6 @@
 ### Donar Table
 1. Add `createdAt` and `updatedAt` timestamps
 2. Add `isVerified` boolean field for KYC verification status
-3. Add `profilePicture` URL field
 4. Add `active` boolean field to track account status
 
 ### DonarTransection Table

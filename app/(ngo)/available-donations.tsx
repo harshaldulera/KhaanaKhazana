@@ -8,40 +8,16 @@ import {
   ActivityIndicator,
   Alert
 } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
+import { Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
-import { useQuery } from '@apollo/client';
-import { GET_DONOR_TRANSACTIONS } from '../../graphql/mutations';
+import { useQuery, useMutation } from '@apollo/client';
+import { GET_AVAILABLE_DONATIONS, UPDATE_DONATION_STATUS } from '../../graphql/mutations';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '@/constants/Colors';
 
-interface Transaction {
-  id: string;
-  food_details: string;
-  pickup_location: string;
-  status: string;
-  created_at: string;
-  pickup_time: string;
-  expiry_time: string;
-  quantity: number;
-  food_type: string;
-  ngo?: {
-    id: string;
-    name: string;
-    phoneNumber: string;
-  };
-  volunteer?: {
-    id: string;
-    name: string;
-    phoneNumber: string;
-    current_latitude?: number;
-    current_longitude?: number;
-  };
-}
-
-export default function HistoryScreen() {
-  const router = useRouter();
-  const [userId, setUserId] = useState<number | null>(null);
+export default function AvailableDonationsScreen() {
+  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
     loadUserInfo();
@@ -54,7 +30,7 @@ export default function HistoryScreen() {
         const parsedInfo = JSON.parse(userInfo);
         setUserId(parsedInfo.id);
       } else {
-        Alert.alert('Error', 'Please log in to view history');
+        Alert.alert('Error', 'Please log in to view available donations');
         router.replace('/(auth)/login');
       }
     } catch (error) {
@@ -62,56 +38,85 @@ export default function HistoryScreen() {
     }
   };
 
-  const { loading, error, data, refetch } = useQuery(GET_DONOR_TRANSACTIONS, {
-    variables: { donor_id: userId },
-    skip: !userId,
+  const { loading, error, data, refetch } = useQuery(GET_AVAILABLE_DONATIONS, {
     fetchPolicy: 'network-only',
+    pollInterval: 30000, // Poll every 30 seconds for updates
   });
 
-  useEffect(() => {
-    // Manually refresh when the screen comes into focus
-    if (userId) {
+  const [updateDonationStatus, { loading: updating }] = useMutation(UPDATE_DONATION_STATUS, {
+    onCompleted: (data) => {
+      Alert.alert(
+        'Success!', 
+        'You have accepted the donation. A volunteer will be assigned for pickup.',
+        [
+          { 
+            text: 'Track Donation', 
+            onPress: () => router.push({
+              pathname: '/(ngo)/tracking',
+              params: { donationId: data.update_donar_transaction_by_pk.id }
+            })
+          }
+        ]
+      );
       refetch();
+    },
+    onError: (error) => {
+      Alert.alert('Error', error.message || 'There was an error accepting the donation');
     }
-  }, [userId, refetch]);
+  });
 
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'PENDING':
-        return '#F5A623';
-      case 'ACCEPTED':
-        return '#4CAF50';
-      case 'IN_TRANSIT':
-        return '#2196F3';
-      case 'DELIVERED':
-        return '#8BC34A';
-      case 'COMPLETED':
-        return '#4CAF50';
-      case 'CANCELLED':
-        return '#F44336';
-      default:
-        return '#757575';
+  const acceptDonation = (donationId) => {
+    if (!userId) {
+      Alert.alert('Error', 'You must be logged in to accept donations');
+      return;
     }
+
+    Alert.alert(
+      'Accept Donation', 
+      'Are you sure you want to accept this donation?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Accept', 
+          onPress: () => {
+            updateDonationStatus({
+              variables: {
+                id: donationId,
+                status: 'ACCEPTED',
+                ngo_id: userId
+              }
+            });
+          }
+        }
+      ]
+    );
   };
 
-  const formatDate = (dateString: string): string => {
+  const formatDate = (dateString) => {
     const date = new Date(dateString);
     return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
 
-  const renderItem = ({ item }: { item: Transaction }) => (
-    <TouchableOpacity 
-      style={styles.donationItem}
-      onPress={() => {
-        router.push({
-          pathname: "/(donor)/tracking" as any,
-          params: { donationId: item.id }
-        });
-      }}
-    >
+  const getTimeRemaining = (expiryTime) => {
+    const now = new Date();
+    const expiry = new Date(expiryTime);
+    const diff = expiry - now;
+    
+    if (diff <= 0) {
+      return "Expired";
+    }
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return `${hours}h ${minutes}m remaining`;
+  };
+
+  const renderItem = ({ item }) => (
+    <View style={styles.donationItem}>
       <View style={styles.donationHeader}>
         <Text style={styles.donationId}>#{item.id}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+        <View style={styles.statusBadge}>
           <Text style={styles.statusText}>{item.status}</Text>
         </View>
       </View>
@@ -135,37 +140,32 @@ export default function HistoryScreen() {
         <Text style={styles.infoText}>Pickup: {formatDate(item.pickup_time)}</Text>
       </View>
 
-      {item.ngo && (
-        <View style={[styles.donationInfoRow, styles.assignedInfo]}>
-          <FontAwesome name="building" size={16} color="#4CAF50" style={styles.infoIcon} />
-          <Text style={[styles.infoText, styles.assignedText]}>
-            Assigned to: {item.ngo.name}
-          </Text>
-        </View>
-      )}
+      <View style={styles.donationInfoRow}>
+        <FontAwesome name="exclamation-circle" size={16} color="#F44336" style={styles.infoIcon} />
+        <Text style={[styles.infoText, { color: '#F44336' }]}>
+          {getTimeRemaining(item.expiry_time)}
+        </Text>
+      </View>
+
+      <View style={styles.donationInfoRow}>
+        <FontAwesome name="user" size={16} color="#666" style={styles.infoIcon} />
+        <Text style={styles.infoText}>
+          Donor: {item.donar.name}
+        </Text>
+      </View>
 
       <TouchableOpacity 
-        style={styles.trackButton}
-        onPress={() => {
-          router.push({
-            pathname: "/(donor)/tracking" as any,
-            params: { donationId: item.id }
-          });
-        }}
+        style={styles.acceptButton}
+        onPress={() => acceptDonation(item.id)}
+        disabled={updating}
       >
-        <FontAwesome name="map" size={16} color="#fff" style={{ marginRight: 8 }} />
-        <Text style={styles.trackButtonText}>Track Donation</Text>
+        <FontAwesome name="check" size={16} color="#fff" style={{ marginRight: 8 }} />
+        <Text style={styles.acceptButtonText}>
+          {updating ? 'Accepting...' : 'Accept Donation'}
+        </Text>
       </TouchableOpacity>
-    </TouchableOpacity>
+    </View>
   );
-
-  if (!userId) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.light.tint} />
-      </View>
-    );
-  }
 
   if (loading) {
     return (
@@ -187,34 +187,34 @@ export default function HistoryScreen() {
     );
   }
 
-  const transactions = data?.donar_transaction || [];
+  const donations = data?.donar_transaction || [];
 
   return (
     <View style={styles.container}>
       <Stack.Screen
         options={{
-          title: 'Donation History',
+          title: 'Available Donations',
           headerShown: true,
         }}
       />
 
-      {transactions.length === 0 ? (
+      {donations.length === 0 ? (
         <View style={styles.emptyContainer}>
           <FontAwesome name="inbox" size={64} color="#ccc" />
-          <Text style={styles.emptyTitle}>No Donations Yet</Text>
+          <Text style={styles.emptyTitle}>No Available Donations</Text>
           <Text style={styles.emptySubtitle}>
-            When you donate food, your donations will appear here
+            When new donations are available, they will appear here
           </Text>
           <TouchableOpacity
-            style={styles.donateButton}
-            onPress={() => router.push("/(donor)/donate" as any)}
+            style={styles.refreshButton}
+            onPress={() => refetch()}
           >
-            <Text style={styles.donateButtonText}>Donate Now</Text>
+            <Text style={styles.refreshButtonText}>Refresh</Text>
           </TouchableOpacity>
         </View>
       ) : (
         <FlatList
-          data={transactions}
+          data={donations}
           renderItem={renderItem}
           keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContainer}
@@ -294,6 +294,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 16,
+    backgroundColor: '#F5A623',
   },
   statusText: {
     color: '#fff',
@@ -321,16 +322,7 @@ const styles = StyleSheet.create({
     color: '#666',
     flex: 1,
   },
-  assignedInfo: {
-    marginTop: 4,
-    backgroundColor: '#E8F5E9',
-    padding: 8,
-    borderRadius: 8,
-  },
-  assignedText: {
-    color: '#2E7D32',
-  },
-  trackButton: {
+  acceptButton: {
     backgroundColor: Colors.light.tint,
     flexDirection: 'row',
     alignItems: 'center',
@@ -339,7 +331,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 12,
   },
-  trackButtonText: {
+  acceptButtonText: {
     color: '#fff',
     fontWeight: 'bold',
   },
@@ -361,15 +353,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 30,
   },
-  donateButton: {
+  refreshButton: {
     backgroundColor: Colors.light.tint,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
-  donateButtonText: {
+  refreshButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
   },
-});
+}); 
