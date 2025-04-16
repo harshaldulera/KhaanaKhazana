@@ -7,7 +7,7 @@ import {
   StyleSheet,
   Button,
   ScrollView,
-  Alert
+  Alert,
 } from "react-native";
 import { Colors } from "@/constants/Colors";
 import { Dropdown } from "react-native-element-dropdown";
@@ -59,7 +59,7 @@ const RegisterScreen = () => {
   const [city, setCity] = useState("");
   const [state, setState] = useState("");
   const [pinCode, setPinCode] = useState("");
-  const [aadharNumber, setAadharNumber] = useState("");
+  // const [aadharNumber, setAadharNumber] = useState("");
   const [ngoName, setNgoName] = useState("");
   const [registrationNumber, setRegistrationNumber] = useState("");
   const [yearOfEstablishment, setYearOfEstablishment] = useState("");
@@ -73,7 +73,11 @@ const RegisterScreen = () => {
   const [areasOfOperationSelected, setAreasOfOperationSelected] = useState("");
   const [preferredDonationTypes, setPreferredDonationTypes] = useState("");
   const [cuisineType, setCuisineType] = useState(null);
+  const [vehicleNumber, setVehicleNumber] = useState("");
+  const [vehicleType, setVehicleType] = useState(null);
+  const [kycDocumentLink, setKycDocumentLink] = useState("");
 
+  const [createDonor] = useMutation(CREATE_DONOR);
   const [createDonor] = useMutation(CREATE_DONOR);
   const [createNGO] = useMutation(CREATE_NGO);
   const [createVolunteer] = useMutation(CREATE_VOLUNTEER);
@@ -81,7 +85,7 @@ const RegisterScreen = () => {
   const handleRegister = async () => {
     try {
       if (!role) {
-        Alert.alert('Error', 'Please select a role');
+        Alert.alert("Error", "Please select a role");
         return;
       }
 
@@ -92,6 +96,7 @@ const RegisterScreen = () => {
             Alert.alert('Error', 'Please fill in all required fields');
             return;
           }
+          response = await createDonor({
           response = await createDonor({
             variables: {
               input: {
@@ -107,9 +112,20 @@ const RegisterScreen = () => {
           });
           break;
 
-        case 'ngo':
-          if (!ngoName || !registrationNumber || !yearOfEstablishment || !ngoType || !contactNumber || !email || !address || !state || !city || !pinCode) {
-            Alert.alert('Error', 'Please fill in all required fields');
+        case "ngo":
+          if (
+            !ngoName ||
+            !registrationNumber ||
+            !yearOfEstablishment ||
+            !ngoType ||
+            !contactNumber ||
+            !email ||
+            !address ||
+            !state ||
+            !city ||
+            !pinCode
+          ) {
+            Alert.alert("Error", "Please fill in all required fields");
             return;
           }
           response = await createNGO({
@@ -134,15 +150,23 @@ const RegisterScreen = () => {
                 areasOfOperation: areasOfOperationSelected,
                 preferredDonationTypes,
                 pickupCapacity,
-                storageFacility
-              }
-            }
+                storageFacility,
+              },
+            },
           });
           break;
 
-        case 'volunteer':
-          if (!fullName || !email || !password || !contactNumber || !address || !city || !state || !pinCode) {
-            Alert.alert('Error', 'Please fill in all required fields');
+        case "volunteer":
+          if (
+            !fullName ||
+            !email ||
+            !password ||
+            !contactNumber ||
+            !vehicleNumber ||
+            !vehicleType ||
+            !kycDocumentLink
+          ) {
+            Alert.alert("Error", "Please fill in all required fields");
             return;
           }
           response = await createVolunteer({
@@ -165,18 +189,21 @@ const RegisterScreen = () => {
       }
 
       if (response?.data) {
-        Alert.alert('Success', 'Registration successful!');
+        Alert.alert("Success", "Registration successful!");
         // Navigate to appropriate dashboard based on role
-        if (role === 'donor') {
+        if (role === "donor") {
           router.replace("/(donor)/dashboard");
-        } else if (role === 'ngo') {
+        } else if (role === "ngo") {
           router.replace("/(ngo)/dashboard");
-        } else if (role === 'volunteer') {
+        } else if (role === "volunteer") {
           router.replace("/(volunteer)/dashboard");
         }
       }
     } catch (error: any) {
-      Alert.alert('Error', error?.message || 'Registration failed. Please try again.');
+      Alert.alert(
+        "Error",
+        error?.message || "Registration failed. Please try again."
+      );
     }
   };
 
@@ -208,6 +235,7 @@ const RegisterScreen = () => {
             placeholder="Full Name"
             value={fullName}
             onChangeText={setFullName}
+            autoCapitalize="words"
           />
           <TextInput
             style={styles.input}
@@ -215,6 +243,7 @@ const RegisterScreen = () => {
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
+            autoCapitalize="none"
           />
           <TextInput
             style={styles.input}
@@ -225,35 +254,17 @@ const RegisterScreen = () => {
           />
           <TextInput
             style={styles.input}
+            placeholder="Phone Number"
+            value={contactNumber}
+            onChangeText={setContactNumber}
+            keyboardType="phone-pad"
+          />
+          <TextInput
+            style={styles.input}
             placeholder="Address"
             value={address}
             onChangeText={setAddress}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="City"
-            value={city}
-            onChangeText={setCity}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="State"
-            value={state}
-            onChangeText={setState}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Pin Code"
-            value={pinCode}
-            onChangeText={setPinCode}
-            keyboardType="numeric"
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Aadhar Number"
-            value={aadharNumber}
-            onChangeText={setAadharNumber}
-            keyboardType="numeric"
+            multiline
           />
           <Dropdown
             style={styles.dropdown}
@@ -276,6 +287,14 @@ const RegisterScreen = () => {
               />
             )}
           />
+          <TextInput
+            style={styles.input}
+            placeholder="Document Link (Google Drive/Dropbox URL)"
+            value={registrationNumber}
+            onChangeText={setRegistrationNumber}
+            autoCapitalize="none"
+            keyboardType="url"
+          />
         </>
       )}
 
@@ -292,34 +311,6 @@ const RegisterScreen = () => {
             placeholder="Registration Number"
             value={registrationNumber}
             onChangeText={setRegistrationNumber}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Year of Establishment"
-            value={yearOfEstablishment}
-            onChangeText={setYearOfEstablishment}
-            keyboardType="numeric"
-          />
-          <Dropdown
-            style={styles.dropdown}
-            placeholderStyle={styles.placeholderStyle}
-            selectedTextStyle={styles.selectedTextStyle}
-            data={ngoTypes}
-            labelField="label"
-            valueField="value"
-            placeholder="Type of NGO"
-            value={ngoType}
-            onChange={(item) => {
-              setNgoType(item.value);
-            }}
-            renderLeftIcon={() => (
-              <AntDesign
-                style={styles.icon}
-                color="black"
-                name="home"
-                size={20}
-              />
-            )}
           />
           <TextInput
             style={styles.input}
@@ -350,7 +341,7 @@ const RegisterScreen = () => {
           />
           <TextInput
             style={styles.input}
-            placeholder="Representative Name"
+            placeholder="POC Name"
             value={contactNumber}
             onChangeText={setContactNumber}
           />
@@ -373,97 +364,6 @@ const RegisterScreen = () => {
             placeholder="Official Address"
             value={address}
             onChangeText={setAddress}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="State"
-            value={state}
-            onChangeText={setState}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="City"
-            value={city}
-            onChangeText={setCity}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="PIN Code"
-            value={pinCode}
-            onChangeText={setPinCode}
-            keyboardType="numeric"
-          />
-          <Dropdown
-            style={styles.dropdown}
-            placeholderStyle={styles.placeholderStyle}
-            selectedTextStyle={styles.selectedTextStyle}
-            data={areasOfOperation}
-            labelField="label"
-            valueField="value"
-            placeholder="Areas of Operation"
-            value={areasOfOperationSelected}
-            onChange={(item) => {
-              setAreasOfOperationSelected(item.value);
-            }}
-            renderLeftIcon={() => (
-              <AntDesign
-                style={styles.icon}
-                color="black"
-                // name="environment"
-                size={20}
-              />
-            )}
-          />
-          <Dropdown
-            style={styles.dropdown}
-            placeholderStyle={styles.placeholderStyle}
-            selectedTextStyle={styles.selectedTextStyle}
-            data={donationTypes}
-            labelField="label"
-            valueField="value"
-            placeholder="Preferred Donation Types"
-            value={preferredDonationTypes}
-            onChange={(item) => {
-              setPreferredDonationTypes(item.value);
-            }}
-            renderLeftIcon={() => (
-              <AntDesign
-                style={styles.icon}
-                color="black"
-                name="gift"
-                size={20}
-              />
-            )}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Available Pickup Capacity"
-            value={pickupCapacity}
-            onChangeText={setPickupCapacity}
-          />
-          <Dropdown
-            style={styles.dropdown}
-            placeholderStyle={styles.placeholderStyle}
-            selectedTextStyle={styles.selectedTextStyle}
-            data={[
-              { label: "Yes", value: "yes" },
-              { label: "No", value: "no" },
-            ]}
-            labelField="label"
-            valueField="value"
-            placeholder="Storage Facility Available?"
-            value={storageFacility}
-            onChange={(item) => {
-              setStorageFacility(item.value);
-            }}
-            renderLeftIcon={() => (
-              <AntDesign
-                style={styles.icon}
-                color="black"
-                name="checkcircle"
-                size={20}
-              />
-            )}
           />
         </>
       )}
@@ -499,28 +399,44 @@ const RegisterScreen = () => {
           />
           <TextInput
             style={styles.input}
-            placeholder="Address"
-            value={address}
-            onChangeText={setAddress}
+            placeholder="Vehicle Number"
+            value={vehicleNumber}
+            onChangeText={setVehicleNumber}
+            autoCapitalize="characters"
+          />
+          <Dropdown
+            style={styles.dropdown}
+            placeholderStyle={styles.placeholderStyle}
+            selectedTextStyle={styles.selectedTextStyle}
+            data={[
+              { label: "Two Wheeler", value: "two_wheeler" },
+              { label: "Three Wheeler", value: "three_wheeler" },
+              { label: "Four Wheeler", value: "four_wheeler" },
+              { label: "Mini Truck", value: "mini_truck" },
+            ]}
+            labelField="label"
+            valueField="value"
+            placeholder="Select Vehicle Type"
+            value={vehicleType}
+            onChange={(item) => {
+              setVehicleType(item.value);
+            }}
+            renderLeftIcon={() => (
+              <AntDesign
+                style={styles.icon}
+                color="black"
+                name="car"
+                size={20}
+              />
+            )}
           />
           <TextInput
             style={styles.input}
-            placeholder="City"
-            value={city}
-            onChangeText={setCity}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="State"
-            value={state}
-            onChangeText={setState}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="PIN Code"
-            value={pinCode}
-            onChangeText={setPinCode}
-            keyboardType="numeric"
+            placeholder="KYC Document Link (Google Drive/Dropbox URL)"
+            value={kycDocumentLink}
+            onChangeText={setKycDocumentLink}
+            autoCapitalize="none"
+            keyboardType="url"
           />
         </>
       )}

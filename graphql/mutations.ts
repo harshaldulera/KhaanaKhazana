@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 // User registration mutations
 export const CREATE_DONOR = gql`
@@ -112,7 +112,7 @@ export const CREATE_DONATION = gql`
       serving_quantity
       food_type
       created_at
-      status : PENDING
+      status: PENDING
     }
   }
 `;
@@ -144,7 +144,11 @@ export const ASSIGN_VOLUNTEER = gql`
 `;
 
 export const UPDATE_VOLUNTEER_LOCATION = gql`
-  mutation UpdateVolunteerLocation($volunteer_id: Int!, $latitude: Float!, $longitude: Float!) {
+  mutation UpdateVolunteerLocation(
+    $volunteer_id: Int!
+    $latitude: Float!
+    $longitude: Float!
+  ) {
     update_volunteer_by_pk(
       pk_columns: { id: $volunteer_id }
       _set: { current_latitude: $latitude, current_longitude: $longitude }
@@ -159,7 +163,10 @@ export const UPDATE_VOLUNTEER_LOCATION = gql`
 // Query donations (no changes required)
 export const GET_DONOR_TRANSACTIONS = gql`
   query GetDonorTransactions($donor_id: Int!) {
-    donar_transaction(where: { donar_id: { _eq: $donor_id } }, order_by: { created_at: desc }) {
+    donar_transaction(
+      where: { donar_id: { _eq: $donor_id } }
+      order_by: { created_at: desc }
+    ) {
       id
       food_details
       pickup_location
@@ -187,8 +194,8 @@ export const GET_DONOR_TRANSACTIONS = gql`
 export const GET_AVAILABLE_DONATIONS = gql`
   query GetAvailableDonations {
     donar_transaction(
-      where: {status: {_eq: PENDING}, ngo_id: {_is_null: true}}, 
-      order_by: {created_at: desc}
+      where: { status: { _eq: PENDING }, ngo_id: { _is_null: true } }
+      order_by: { created_at: desc }
     ) {
       id
       food_details
@@ -211,8 +218,8 @@ export const GET_AVAILABLE_DONATIONS = gql`
 export const GET_NGO_TRANSACTIONS = gql`
   query GetNGOTransactions($ngo_id: Int!) {
     donar_transaction(
-      where: {ngo_id: {_eq: $ngo_id}}, 
-      order_by: {created_at: desc}
+      where: { ngo_id: { _eq: $ngo_id } }
+      order_by: { created_at: desc }
     ) {
       id
       food_details
@@ -242,8 +249,12 @@ export const GET_NGO_TRANSACTIONS = gql`
 export const GET_AVAILABLE_PICKUPS = gql`
   query GetAvailablePickups {
     donar_transaction(
-      where: {status: {_eq: "ACCEPTED"}, ngo_id: {_is_null: false}, volunteer_id: {_is_null: true}}, 
-      order_by: {created_at: desc}
+      where: {
+        status: { _eq: "ACCEPTED" }
+        ngo_id: { _is_null: false }
+        volunteer_id: { _is_null: true }
+      }
+      order_by: { created_at: desc }
     ) {
       id
       food_details
@@ -273,8 +284,8 @@ export const GET_AVAILABLE_PICKUPS = gql`
 export const GET_VOLUNTEER_PICKUPS = gql`
   query GetVolunteerPickups($volunteer_id: Int!) {
     donar_transaction(
-      where: {volunteer_id: {_eq: $volunteer_id}}, 
-      order_by: {created_at: desc}
+      where: { volunteer_id: { _eq: $volunteer_id } }
+      order_by: { created_at: desc }
     ) {
       id
       food_details

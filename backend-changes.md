@@ -51,4 +51,16 @@
 10. Implement proper caching mechanism 
 
 
-Volunteer Dasahboard: "available pickup request" neighbour matching algo
+Volunteer Dasahboard: givev query to cursor and make dashboard better
+change order
+write donate instead of transaction
+haptic tab ke upar ek chota ttab where we will show order details
+make donation like zomato
+
+NGO Dashboard: give feedback mein photo posting like instagram
+and reuse same zomato component
+
+VOLUNTEER DASHBOARD: tOGGLE BUTTON IS ACTIVE OR NOT
+IF HE IS ACTIVE SHOW NEAREST DONATION PLACE
+JAISEE HI CLICKS ON "ACCEPT" LOCATION AUTOMATICALLY STARTS SHARING,
+DESTINATION PE GOOGLE MAPS DALNA HAI
