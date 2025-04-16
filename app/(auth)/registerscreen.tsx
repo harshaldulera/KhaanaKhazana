@@ -13,8 +13,12 @@ import { Colors } from "@/constants/Colors";
 import { Dropdown } from "react-native-element-dropdown";
 import { AntDesign } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { useMutation } from '@apollo/client';
-import { CREATE_DONOR, CREATE_NGO, CREATE_VOLUNTEER } from '../../graphql/mutations';
+import { useMutation } from "@apollo/client";
+import {
+  CREATE_DONOR,
+  CREATE_NGO,
+  CREATE_VOLUNTEER,
+} from "../../graphql/mutations";
 
 const roles = [
   { label: "Donor", value: "donor" },
@@ -76,6 +80,7 @@ const RegisterScreen = () => {
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [vehicleType, setVehicleType] = useState(null);
   const [kycDocumentLink, setKycDocumentLink] = useState("");
+  const [pocName, setPocName] = useState("");
 
   const [createDonor] = useMutation(CREATE_DONOR);
   // const [createDonor] = useMutation(CREATE_DONOR);
@@ -91,9 +96,9 @@ const RegisterScreen = () => {
 
       let response;
       switch (role) {
-        case 'donor':
+        case "donor":
           if (!fullName || !email || !password || !address || !contactNumber) {
-            Alert.alert('Error', 'Please fill in all required fields');
+            Alert.alert("Error", "Please fill in all required fields");
             return;
           }
           // response = await createDonor({
@@ -106,9 +111,9 @@ const RegisterScreen = () => {
                 phone_number: contactNumber,
                 address,
                 cuisine_type: cuisineType || null,
-                kyc_document: "pending"
-              }
-            }
+                kyc_document: "pending",
+              },
+            },
           });
           break;
 
@@ -116,14 +121,9 @@ const RegisterScreen = () => {
           if (
             !ngoName ||
             !registrationNumber ||
-            !yearOfEstablishment ||
-            !ngoType ||
             !contactNumber ||
             !email ||
-            !address ||
-            !state ||
-            !city ||
-            !pinCode
+            !address
           ) {
             Alert.alert("Error", "Please fill in all required fields");
             return;
@@ -132,25 +132,16 @@ const RegisterScreen = () => {
             variables: {
               input: {
                 name: ngoName,
-                registrationNumber,
-                yearOfEstablishment,
-                type: ngoType,
-                website,
-                description,
-                phoneNumber: contactNumber, 
-                pocPhoneNumber: alternateContactNumber,
-                pocName: fullName,
                 email,
                 password,
+                phone_number: contactNumber,
                 address,
-                state,
-                city,
-                pinCode,
-                kycdoc: registrationNumber,
-                areasOfOperation: areasOfOperationSelected,
-                preferredDonationTypes,
-                pickupCapacity,
-                storageFacility,
+                kyc_document: "pending",
+                poc_name: pocName,
+                poc_phone_number: alternateContactNumber,
+                website,
+                description,
+                registration_number: registrationNumber,
               },
             },
           });
@@ -181,9 +172,9 @@ const RegisterScreen = () => {
                 state,
                 pinCode,
                 kycdoc: aadharNumber,
-                availability: "Available"
-              }
-            }
+                availability: "Available",
+              },
+            },
           });
           break;
       }
@@ -342,8 +333,8 @@ const RegisterScreen = () => {
           <TextInput
             style={styles.input}
             placeholder="POC Name"
-            value={contactNumber}
-            onChangeText={setContactNumber}
+            value={pocName}
+            onChangeText={setPocName}
           />
           <TextInput
             style={styles.input}
@@ -496,4 +487,3 @@ const styles = StyleSheet.create({
   },
 });
 export default RegisterScreen;
-

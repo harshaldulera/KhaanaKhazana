@@ -22,11 +22,11 @@ export const CREATE_NGO = gql`
       id
       name
       email
-      phoneNumber
+      phone_number
       address
-      kycdoc
-      pocName
-      pocPhoneNumber
+      kyc_document
+      poc_name
+      poc_phone_number
     }
   }
 `;
