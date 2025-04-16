@@ -64,3 +64,17 @@ VOLUNTEER DASHBOARD: tOGGLE BUTTON IS ACTIVE OR NOT
 IF HE IS ACTIVE SHOW NEAREST DONATION PLACE
 JAISEE HI CLICKS ON "ACCEPT" LOCATION AUTOMATICALLY STARTS SHARING,
 DESTINATION PE GOOGLE MAPS DALNA HAI
+
+
+
+Donor UI change from coursel and funraising part
+Donors are individual or institutional
+
+Personalization Profiling and backend algorithm for rating
+Keep a track of donations doone by volunteer so that we can give each donor a star delivery boy
+
+NGO Information about carousel
+
+Admin dashboard view for number of NGO, engagement of NGO, donor ka engagement, volunteer engagement
+
+add unique neighbour matching algorithm

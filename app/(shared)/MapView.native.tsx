@@ -1,20 +1,69 @@
+
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Dimensions, TouchableOpacity, Text } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { View, StyleSheet, Dimensions, TouchableOpacity, Text, Linking, Platform, Alert } from 'react-native';
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
 interface MapViewProps {
   latitude: number;
   longitude: number;
   title?: string;
   description?: string;
+  destinationLatitude?: number;
+  destinationLongitude?: number;
+  showRoute?: boolean;
+  updateInterval?: number;
 }
 
-export default function LocationMapView({ latitude, longitude, title, description }: MapViewProps) {
+export default function LocationMapView({ 
+  latitude, 
+  longitude, 
+  title, 
+  description,
+  destinationLatitude,
+  destinationLongitude,
+  showRoute = false,
+  updateInterval = 5000
+}: MapViewProps) {
   const [userLocation, setUserLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [routeCoordinates, setRouteCoordinates] = useState<{latitude: number, longitude: number}[]>([]);
+
+  // Hardcoded destination coordinates
+  const fixedDestination = {
+    latitude: 19.1182343,
+    longitude: 72.9106502
+  };
+
+  const openGoogleMapsNavigation = async () => {
+    if (!userLocation) {
+      Alert.alert('Error', 'Unable to get your current location');
+      return;
+    }
+
+    const origin = `${userLocation.coords.latitude},${userLocation.coords.longitude}`;
+    const destination = `${fixedDestination.latitude},${fixedDestination.longitude}`;
+    
+    const url = Platform.select({
+      ios: `comgooglemaps://?saddr=${origin}&daddr=${destination}&directionsmode=driving`,
+      android: `google.navigation:q=${fixedDestination.latitude},${fixedDestination.longitude}`,
+    });
+
+    try {
+      const supported = await Linking.canOpenURL(url!);
+      if (supported) {
+        await Linking.openURL(url!);
+      } else {
+        // Fallback to web version if app is not installed
+        const webUrl = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`;
+        await Linking.openURL(webUrl);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Could not open Google Maps');
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -26,14 +75,41 @@ export default function LocationMapView({ latitude, longitude, title, descriptio
 
       let location = await Location.getCurrentPositionAsync({});
       setUserLocation(location);
+
+      if (showRoute) {
+        // Start watching location updates
+        const subscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            timeInterval: updateInterval,
+            distanceInterval: 10,
+          },
+          (location) => {
+            setUserLocation(location);
+            // Update route coordinates
+            setRouteCoordinates(prev => {
+              const newCoordinates = [...prev, {
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude
+              }];
+              // Keep only last 100 points to prevent memory issues
+              return newCoordinates.slice(-100);
+            });
+          }
+        );
+
+        return () => {
+          subscription.remove();
+        };
+      }
     })();
-  }, []);
+  }, [showRoute, updateInterval]);
 
   const initialRegion = {
-    latitude: latitude,
-    longitude: longitude,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
+    latitude: (fixedDestination.latitude + (userLocation?.coords.latitude || latitude)) / 2,
+    longitude: (fixedDestination.longitude + (userLocation?.coords.longitude || longitude)) / 2,
+    latitudeDelta: 0.5,
+    longitudeDelta: 0.5,
   };
 
   return (
@@ -46,11 +122,11 @@ export default function LocationMapView({ latitude, longitude, title, descriptio
         {/* Destination Marker */}
         <Marker
           coordinate={{
-            latitude: latitude,
-            longitude: longitude,
+            latitude: fixedDestination.latitude,
+            longitude: fixedDestination.longitude,
           }}
-          title={title || "Location"}
-          description={description}
+          title="Destination"
+          description="Mumbai, India"
         >
           <View style={styles.markerContainer}>
             <View style={styles.marker}>
@@ -75,6 +151,21 @@ export default function LocationMapView({ latitude, longitude, title, descriptio
             </View>
           </Marker>
         )}
+
+        {/* Route Line */}
+        {showRoute && routeCoordinates.length > 0 && (
+          <Polyline
+            coordinates={[
+              ...routeCoordinates,
+              {
+                latitude: fixedDestination.latitude,
+                longitude: fixedDestination.longitude
+              }
+            ]}
+            strokeWidth={4}
+            strokeColor="#007AFF"
+          />
+        )}
       </MapView>
 
       <TouchableOpacity 
@@ -85,12 +176,27 @@ export default function LocationMapView({ latitude, longitude, title, descriptio
       </TouchableOpacity>
 
       <View style={styles.infoCard}>
-        <Text style={styles.title}>{title || "Location Details"}</Text>
-        {description && <Text style={styles.description}>{description}</Text>}
+        <Text style={styles.title}>Route Information</Text>
+        {userLocation && (
+          <Text style={styles.coordinates}>
+            Your Location:{'\n'}
+            Latitude: {userLocation.coords.latitude.toFixed(6)}{'\n'}
+            Longitude: {userLocation.coords.longitude.toFixed(6)}
+          </Text>
+        )}
         <Text style={styles.coordinates}>
-          Latitude: {latitude.toFixed(6)}{'\n'}
-          Longitude: {longitude.toFixed(6)}
+          Destination:{'\n'}
+          Latitude: {fixedDestination.latitude.toFixed(6)}{'\n'}
+          Longitude: {fixedDestination.longitude.toFixed(6)}
         </Text>
+        
+        <TouchableOpacity 
+          style={styles.navigateButton}
+          onPress={openGoogleMapsNavigation}
+        >
+          <Ionicons name="navigate" size={24} color="#fff" />
+          <Text style={styles.navigateButtonText}>Open in Google Maps</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -170,5 +276,21 @@ const styles = StyleSheet.create({
   coordinates: {
     fontSize: 12,
     color: '#888',
+    marginBottom: 4,
+  },
+  navigateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4285F4',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  navigateButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
 }); 
