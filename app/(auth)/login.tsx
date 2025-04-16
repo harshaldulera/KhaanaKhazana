@@ -16,10 +16,27 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const logo = require('@/assets/images/logo.png');
 
+type Role = 'donor' | 'ngo' | 'volunteer';
+
+const DUMMY_CREDENTIALS: Record<Role, { email: string; password: string }> = {
+  donor: {
+    email: "donor@test.com",
+    password: "test123"
+  },
+  ngo: {
+    email: "ngo@test.com",
+    password: "test123"
+  },
+  volunteer: {
+    email: "volunteer@test.com",
+    password: "test123"
+  }
+};
+
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("donor");
+  const [role, setRole] = useState<Role>("donor");
 
   const [loginUser, { loading }] = useLazyQuery(LOGIN_USER, {
     onCompleted: async (data) => {
@@ -69,6 +86,25 @@ export default function LoginScreen() {
       return;
     }
     
+    // Check if using dummy credentials
+    const isUsingDummyCredentials = Object.values(DUMMY_CREDENTIALS).some(
+      creds => creds.email === email && creds.password === password
+    );
+
+    if (isUsingDummyCredentials) {
+      // Store dummy user info in AsyncStorage
+      AsyncStorage.setItem('userInfo', JSON.stringify({
+        id: 'dummy-id',
+        name: 'Test User',
+        email: email,
+        role: 'volunteer'
+      }));
+      
+      // Navigate to volunteer dashboard
+      router.replace("/(volunteer)/dashboard");
+      return;
+    }
+    
     loginUser({
       variables: {
         email,
@@ -103,6 +139,15 @@ export default function LoginScreen() {
             <Text style={styles.roleText}>Volunteer</Text>
           </TouchableOpacity>
         </View>
+        <TouchableOpacity 
+          style={styles.dummyButton}
+          onPress={() => {
+            setEmail(DUMMY_CREDENTIALS[role].email);
+            setPassword(DUMMY_CREDENTIALS[role].password);
+          }}
+        >
+          <Text style={styles.dummyButtonText}>Use Dummy Credentials</Text>
+        </TouchableOpacity>
         <View style={styles.form}>
           <TextInput
             style={styles.input}
@@ -228,5 +273,17 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: Colors.light.tint,
     fontWeight: "bold",
+  },
+  dummyButton: {
+    backgroundColor: '#4CAF50',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  dummyButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

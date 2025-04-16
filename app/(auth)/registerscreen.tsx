@@ -34,24 +34,12 @@ const cuisines = [
   { label: "Chinese", value: "chinese" },
 ];
 
-const ngoTypes = [
-  { label: "Trust", value: "trust" },
-  { label: "Society", value: "society" },
-  { label: "Section 8 Company", value: "section8" },
-  { label: "Other", value: "other" },
-];
 
-const areasOfOperation = [
-  { label: "City-wide", value: "city" },
-  { label: "State-wide", value: "state" },
-  { label: "National", value: "national" },
-];
-
-const donationTypes = [
-  { label: "Cooked Food", value: "cooked" },
-  { label: "Packaged", value: "packaged" },
-  { label: "Groceries", value: "groceries" },
-  { label: "Others", value: "others" },
+const vehicleTypes = [
+  { label: "Two Wheeler", value: "two_wheeler" },
+  { label: "Three Wheeler", value: "three_wheeler" },
+  { label: "Four Wheeler", value: "four_wheeler" },
+  { label: "Mini Truck", value: "mini_truck" },
 ];
 
 const RegisterScreen = () => {
@@ -60,22 +48,12 @@ const RegisterScreen = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [address, setAddress] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
-  const [pinCode, setPinCode] = useState("");
-  // const [aadharNumber, setAadharNumber] = useState("");
   const [ngoName, setNgoName] = useState("");
   const [registrationNumber, setRegistrationNumber] = useState("");
-  const [yearOfEstablishment, setYearOfEstablishment] = useState("");
-  const [ngoType, setNgoType] = useState(null);
   const [website, setWebsite] = useState("");
   const [description, setDescription] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [alternateContactNumber, setAlternateContactNumber] = useState("");
-  const [pickupCapacity, setPickupCapacity] = useState("");
-  const [storageFacility, setStorageFacility] = useState(null);
-  const [areasOfOperationSelected, setAreasOfOperationSelected] = useState("");
-  const [preferredDonationTypes, setPreferredDonationTypes] = useState("");
   const [cuisineType, setCuisineType] = useState(null);
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [vehicleType, setVehicleType] = useState(null);
@@ -83,7 +61,6 @@ const RegisterScreen = () => {
   const [pocName, setPocName] = useState("");
 
   const [createDonor] = useMutation(CREATE_DONOR);
-  // const [createDonor] = useMutation(CREATE_DONOR);
   const [createNGO] = useMutation(CREATE_NGO);
   const [createVolunteer] = useMutation(CREATE_VOLUNTEER);
 
@@ -166,13 +143,12 @@ const RegisterScreen = () => {
                 name: fullName,
                 email,
                 password,
-                phoneNumber: contactNumber,
-                currentLocation: address,
-                city,
-                state,
-                pinCode,
-                kycdoc: aadharNumber,
-                availability: "Available",
+                phone_number: contactNumber,
+                vehicle_number: vehicleNumber,
+                vehicle_type: vehicleType,
+                current_location: address,
+                kyc_document: kycDocumentLink,
+                availability: null,
               },
             },
           });
@@ -399,12 +375,7 @@ const RegisterScreen = () => {
             style={styles.dropdown}
             placeholderStyle={styles.placeholderStyle}
             selectedTextStyle={styles.selectedTextStyle}
-            data={[
-              { label: "Two Wheeler", value: "two_wheeler" },
-              { label: "Three Wheeler", value: "three_wheeler" },
-              { label: "Four Wheeler", value: "four_wheeler" },
-              { label: "Mini Truck", value: "mini_truck" },
-            ]}
+            data={vehicleTypes}
             labelField="label"
             valueField="value"
             placeholder="Select Vehicle Type"

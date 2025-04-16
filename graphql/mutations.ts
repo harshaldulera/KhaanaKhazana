@@ -37,9 +37,11 @@ export const CREATE_VOLUNTEER = gql`
       id
       name
       email
-      phoneNumber
-      currentLocation
-      kycdoc
+      phone_number
+      vehicle_number
+      vehicle_type
+      current_location
+      kyc_document
       availability
     }
   }
