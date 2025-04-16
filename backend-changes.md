@@ -67,7 +67,7 @@ DESTINATION PE GOOGLE MAPS DALNA HAI
 
 
 
-Donor UI change from coursel and funraising part
+Donor UI change from carousel and fundraising part
 Donors are individual or institutional
 
 Personalization Profiling and backend algorithm for rating
