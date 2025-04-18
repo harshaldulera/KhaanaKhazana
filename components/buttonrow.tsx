@@ -2,38 +2,56 @@ import React from 'react';
 import { Colors } from '@/constants/Colors';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { router } from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const { width: screenWidth } = Dimensions.get('window');
-const buttonPadding = 10;
-const buttonMargin = 5;
-const numberOfButtons = 4;
-const availableWidth = screenWidth - (buttonPadding * 2) - (buttonMargin * (numberOfButtons * 2));
-const buttonWidth = availableWidth / numberOfButtons;
+
+const donationTypes = [
+    {
+        id: 'food',
+        title: 'Donate Food',
+        icon: 'restaurant',
+        description: 'Share excess food from events or restaurants',
+        route: '/(donor)/donate'
+    },
+    {
+        id: 'grocery',
+        title: 'Donate Grocery',
+        icon: 'shopping-basket',
+        description: 'Contribute essential grocery items',
+        route: '/(donor)/donate'
+    },
+    {
+        id: 'money',
+        title: 'Donate Money',
+        icon: 'attach-money',
+        description: 'Support food distribution programs',
+        route: '/(donor)/donate'
+    }
+];
 
 const ButtonRow = () => {
-    const handleButtonPress = (buttonType: string) => {
-        console.log(`${buttonType} button pressed`);
-        if(buttonType === 'Donate Food') {
-            router.replace("/(donor)/donate");
-        } else {
-            router.replace("/(donor)/ngolist");
-        }
+    const handleButtonPress = (route: string) => {
+        router.replace(route);
     };
 
     return (
         <View style={styles.container}>
-            <TouchableOpacity style={styles.button} onPress={() => handleButtonPress('Donate Food')}>
-                <Text style={styles.buttonText}>Donate Food</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={() => handleButtonPress('Donate Grocery')}>
-                <Text style={styles.buttonText}>Donate Grocery</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={() => handleButtonPress('Donate Money')}>
-                <Text style={styles.buttonText}>Donate Money</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.button} onPress={() => handleButtonPress('Sponsor Food')}>
-                <Text style={styles.buttonText}>Sponsor Food</Text>
-            </TouchableOpacity>
+            {donationTypes.map((type) => (
+                <TouchableOpacity 
+                    key={type.id}
+                    style={styles.button} 
+                    onPress={() => handleButtonPress(type.route)}
+                >
+                    <View style={styles.iconContainer}>
+                        <MaterialIcons name={type.icon as any} size={24} color={Colors.light.tint} />
+                    </View>
+                    <Text style={styles.buttonTitle}>{type.title}</Text>
+                    <Text style={styles.buttonDescription} numberOfLines={2}>
+                        {type.description}
+                    </Text>
+                </TouchableOpacity>
+            ))}
         </View>
     );
 };
@@ -43,26 +61,46 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: buttonPadding,
+        padding: 15,
+        marginTop: 10,
     },
     button: {
-        width: buttonWidth,
-        height: 55, 
-        marginHorizontal: buttonMargin,
-        backgroundColor: Colors.light.tint,
-        paddingVertical: 10,
-        paddingHorizontal: 5, 
-        borderRadius: 8, 
-        borderWidth: 1,
-        borderColor: 'white',
+        flex: 1,
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 15,
+        marginHorizontal: 8,
         alignItems: 'center',
-        justifyContent: 'center', 
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+        elevation: 3,
     },
-    buttonText: {
-        color: '#fff',
-        fontSize: 14, // Slightly smaller font size for better fit
+    iconContainer: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: 'rgba(0, 122, 255, 0.1)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    buttonTitle: {
+        color: '#333',
+        fontSize: 16,
         fontWeight: '600',
+        marginBottom: 5,
         textAlign: 'center',
+    },
+    buttonDescription: {
+        color: '#666',
+        fontSize: 12,
+        textAlign: 'center',
+        lineHeight: 16,
     },
 });
 

@@ -78,3 +78,14 @@ NGO Information about carousel
 Admin dashboard view for number of NGO, engagement of NGO, donor ka engagement, volunteer engagement
 
 add unique neighbour matching algorithm
+
+Mahek to-do: donor dashboard UI change
+             
+When new donation is created (when donor clicks on donate after the form) show a screen saying "Finding nearest volunteer near your" loading page type crazy UI page.
+Maybe in the UI we can show multiple points in the map jaha pe apan random points pe point karke bata sakte hai ki yaha volunteer h yaha volunteer h aise karke vo volunteer ke location pe accept hoga
+
+After that we will show (uber ride accepted type page)
+Show map
+show name
+show vehicleNumber
+show photo etc

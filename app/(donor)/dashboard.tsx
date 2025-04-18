@@ -4,7 +4,6 @@ import { Stack } from 'expo-router';
 import { Colors } from "../../constants/Colors";
 import CarouselCards from "@/components/carouselcards";
 import ButtonRow from "@/components/buttonrow";
-import EventHighlights from "@/components/eventhighlights";
 
 export default function DonorDashboard() {
   return (
@@ -15,11 +14,12 @@ export default function DonorDashboard() {
           headerShown: false,
         }}
       />
-      {/* <ScrollView> */}
-        <CarouselCards />
-        <ButtonRow />
-        <EventHighlights />
-      {/* </ScrollView> */}
+      <View style={styles.header}>
+        <Text style={styles.welcomeText}>Welcome to KhaanaKhazana</Text>
+        <Text style={styles.subtitle}>Make a difference with your food donations</Text>
+      </View>
+      <CarouselCards />
+      <ButtonRow />
     </ScrollView>
   );
 }
@@ -27,11 +27,22 @@ export default function DonorDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    // padding: 20,
+    backgroundColor: '#f8f8f8',
   },
-  title: {
+  header: {
+    padding: 20,
+    backgroundColor: Colors.light.tint,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  welcomeText: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 20,
+    color: '#fff',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
   },
 });
