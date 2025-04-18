@@ -9,7 +9,11 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.khaanakhazana.khaanakhazana",
+      "config": {
+        "googleMapsApiKey": "YOUR_IOS_API_KEY"
+      }
     },
     "android": {
       "package": "com.khaanakhazana.khaanakhazana",
@@ -17,6 +21,11 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "config": {
+        "googleMaps": {
+          "apiKey": "YOUR_ANDROID_API_KEY"
+        }
       }
     },
     "web": {
@@ -33,6 +42,18 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow KhaanaKhazana to use your location."
+        }
+      ],
+      [
+        "@rnmapbox/maps",
+        {
+          "mapboxPublicKey": "pk.eyJ1IjoibWFoZWtndWRoa2EiLCJhIjoiY2x0dGJtZGVyMGJtZTJrcXZ4ZGVtZGJwZiJ9.Ry_-OaeLxHBVlm5y_CUo8g"
         }
       ]
     ],

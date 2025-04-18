@@ -44,19 +44,10 @@ export default function DonateScreen() {
   const [createDonation] = useMutation(CREATE_DONATION, {
     onCompleted: (data) => {
       setIsSubmitting(false);
-      Alert.alert(
-        'Success!', 
-        'Your donation has been created. We will find an NGO to accept your donation.',
-        [
-          { 
-            text: 'Track Donation', 
-            onPress: () => router.push({
-              pathname: '/(donor)/tracking',
-              params: { donationId: data.insert_donar_transaction_one.id }
-            })
-          }
-        ]
-      );
+      router.replace({
+        pathname: '/(donor)/finding-volunteer',
+        params: { donationId: data.insert_donar_transaction_one.id }
+      });
       resetForm();
     },
     onError: (error) => {
