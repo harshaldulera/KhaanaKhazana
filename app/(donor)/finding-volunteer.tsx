@@ -9,18 +9,32 @@ import {
   Platform,
 } from 'react-native';
 import { Stack, useLocalSearchParams, router } from 'expo-router';
-import Mapbox from '@rnmapbox/maps';
-import { Colors } from '@/constants/Colors';
 import * as Location from 'expo-location';
+import { Colors } from '@/constants/Colors';
 
-// Initialize Mapbox - you can use a public token for development
-Mapbox.setAccessToken('pk.eyJ1IjoibWFoZWtndWRoa2EiLCJhIjoiY2x0dGJtZGVyMGJtZTJrcXZ4ZGVtZGJwZiJ9.Ry_-OaeLxHBVlm5y_CUo8g');
+// Define types for our data structures
+interface Volunteer {
+  id: string;
+  coordinate: [number, number]; // [longitude, latitude]
+}
+
+interface CurrentLocation {
+  latitude: number;
+  longitude: number;
+}
+
+// Conditional import for Mapbox
+let Mapbox: any;
+if (Platform.OS !== 'web') {
+  Mapbox = require('@rnmapbox/maps').default;
+  Mapbox.setAccessToken('pk.eyJ1IjoibWFoZWtndWRoa2EiLCJhIjoiY2x0dGJtZGVyMGJtZTJrcXZ4ZGVtZGJwZiJ9.Ry_-OaeLxHBVlm5y_CUo8g');
+}
 
 const { width, height } = Dimensions.get('window');
 const ZOOM_LEVEL = 14;
 
 // Simulated volunteer locations around a center point
-const generateRandomPoints = (centerLat: number, centerLng: number, count: number) => {
+const generateRandomPoints = (centerLat: number, centerLng: number, count: number): Volunteer[] => {
   return Array.from({ length: count }, (_, i) => ({
     id: i.toString(),
     coordinate: [
@@ -32,11 +46,11 @@ const generateRandomPoints = (centerLat: number, centerLng: number, count: numbe
 
 export default function FindingVolunteerScreen() {
   const params = useLocalSearchParams();
-  const [currentLocation, setCurrentLocation] = useState({
+  const [currentLocation, setCurrentLocation] = useState<CurrentLocation>({
     latitude: 19.0760,  // Default to Mumbai coordinates
     longitude: 72.8777,
   });
-  const [volunteers, setVolunteers] = useState([]);
+  const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
   const [locationPermission, setLocationPermission] = useState(false);
   const pulseAnim = useRef(new Animated.Value(0)).current;
   const [loadingText, setLoadingText] = useState('Finding nearby volunteers');
@@ -114,20 +128,60 @@ export default function FindingVolunteerScreen() {
     outputRange: [1, 1.3],
   });
 
-  const renderAnnotations = () => {
-    return volunteers.map((volunteer) => (
-      <Mapbox.PointAnnotation
-        key={volunteer.id}
-        id={volunteer.id}
-        coordinate={volunteer.coordinate}
+  const renderMap = () => {
+    // Always show placeholder on web
+    if (Platform.OS === 'web') {
+      return (
+        <View style={styles.mapPlaceholder}>
+          <Text>Please use the mobile app for the full experience. The map feature is not available on web.</Text>
+        </View>
+      );
+    }
+
+    // Only render map on native platforms
+    if (!Mapbox) {
+      return (
+        <View style={styles.mapPlaceholder}>
+          <Text>Map is not available</Text>
+        </View>
+      );
+    }
+
+    return (
+      <Mapbox.MapView
+        style={styles.map}
+        zoomLevel={ZOOM_LEVEL}
+        centerCoordinate={[currentLocation.longitude, currentLocation.latitude]}
       >
-        <Animated.View style={[styles.markerContainer, { transform: [{ scale }] }]}>
-          <View style={styles.volunteerMarker}>
-            <View style={styles.volunteerDot} />
+        <Mapbox.Camera
+          zoomLevel={ZOOM_LEVEL}
+          centerCoordinate={[currentLocation.longitude, currentLocation.latitude]}
+        />
+        
+        <Mapbox.PointAnnotation
+          id="donation-location"
+          coordinate={[currentLocation.longitude, currentLocation.latitude]}
+        >
+          <View style={styles.donationMarker}>
+            <View style={styles.donationDot} />
           </View>
-        </Animated.View>
-      </Mapbox.PointAnnotation>
-    ));
+        </Mapbox.PointAnnotation>
+
+        {volunteers.map((volunteer) => (
+          <Mapbox.PointAnnotation
+            key={volunteer.id}
+            id={volunteer.id}
+            coordinate={volunteer.coordinate}
+          >
+            <Animated.View style={[styles.markerContainer, { transform: [{ scale }] }]}>
+              <View style={styles.volunteerMarker}>
+                <View style={styles.volunteerDot} />
+              </View>
+            </Animated.View>
+          </Mapbox.PointAnnotation>
+        ))}
+      </Mapbox.MapView>
+    );
   };
 
   return (
@@ -138,35 +192,7 @@ export default function FindingVolunteerScreen() {
         }}
       />
 
-      {Platform.OS === 'web' ? (
-        <View style={styles.mapPlaceholder}>
-          <Text>Map is not available on web platform</Text>
-        </View>
-      ) : (
-        <Mapbox.MapView
-          style={styles.map}
-          zoomLevel={ZOOM_LEVEL}
-          centerCoordinate={[currentLocation.longitude, currentLocation.latitude]}
-        >
-          <Mapbox.Camera
-            zoomLevel={ZOOM_LEVEL}
-            centerCoordinate={[currentLocation.longitude, currentLocation.latitude]}
-          />
-          
-          {/* Donation location marker */}
-          <Mapbox.PointAnnotation
-            id="donation-location"
-            coordinate={[currentLocation.longitude, currentLocation.latitude]}
-          >
-            <View style={styles.donationMarker}>
-              <View style={styles.donationDot} />
-            </View>
-          </Mapbox.PointAnnotation>
-
-          {/* Volunteer markers */}
-          {renderAnnotations()}
-        </Mapbox.MapView>
-      )}
+      {renderMap()}
 
       <View style={styles.overlay}>
         <View style={styles.card}>
@@ -194,6 +220,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#f5f5f5',
+    padding: 20,
   },
   overlay: {
     position: 'absolute',
