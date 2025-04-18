@@ -9,7 +9,8 @@ import {
   Alert,
   Platform,
   KeyboardAvoidingView,
-  Switch
+  Switch,
+  ActivityIndicator
 } from 'react-native';
 import { Stack } from 'expo-router';
 import { router } from 'expo-router';
@@ -22,25 +23,27 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '@/constants/Colors';
 
 const foodTypes = [
-  { label: 'VEG', value: 'VEG' },
-  { label: 'NON_VEG', value: 'NON_VEG' },
+  { label: 'Vegetarian', value: 'VEG' },
+  { label: 'Non-Vegetarian', value: 'NON_VEG' },
 ];
 
 export default function DonateScreen() {
-  const [userId, setUserId] = useState(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [foodDetails, setFoodDetails] = useState('');
   const [quantity, setQuantity] = useState('');
-  const [foodType, setFoodType] = useState(null);
+  const [foodType, setFoodType] = useState<string | null>(null);
   const [pickupLocation, setPickupLocation] = useState('');
   const [pickupDate, setPickupDate] = useState(new Date());
-  const [expiryDate, setExpiryDate] = useState(new Date(Date.now() + 24 * 60 * 60 * 1000)); // Default to 24 hours from now
+  const [expiryDate, setExpiryDate] = useState(new Date(Date.now() + 24 * 60 * 60 * 1000));
   const [showPickupPicker, setShowPickupPicker] = useState(false);
   const [showExpiryPicker, setShowExpiryPicker] = useState(false);
   const [additionalNotes, setAdditionalNotes] = useState('');
   const [isCoolingRequired, setIsCoolingRequired] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [createDonation, { loading }] = useMutation(CREATE_DONATION, {
+  const [createDonation] = useMutation(CREATE_DONATION, {
     onCompleted: (data) => {
+      setIsSubmitting(false);
       Alert.alert(
         'Success!', 
         'Your donation has been created. We will find an NGO to accept your donation.',
@@ -57,7 +60,8 @@ export default function DonateScreen() {
       resetForm();
     },
     onError: (error) => {
-      Alert.alert('Error', error.message || 'There was an error creating your donation');
+      setIsSubmitting(false);
+      Alert.alert('Error', error.message || 'There was an error creating your donation. Please try again.');
     }
   });
 
@@ -77,6 +81,8 @@ export default function DonateScreen() {
       }
     } catch (error) {
       console.error('Error loading user info:', error);
+      Alert.alert('Error', 'Failed to load user information. Please try logging in again.');
+      router.replace('/(auth)/login');
     }
   };
 
@@ -88,9 +94,10 @@ export default function DonateScreen() {
     setPickupDate(new Date());
     setExpiryDate(new Date(Date.now() + 24 * 60 * 60 * 1000));
     setAdditionalNotes('');
+    setIsCoolingRequired(false);
   };
 
-  const handlePickupDateChange = (event, selectedDate) => {
+  const handlePickupDateChange = (event: any, selectedDate?: Date) => {
     setShowPickupPicker(Platform.OS === 'ios');
     if (selectedDate) {
       setPickupDate(selectedDate);
@@ -105,7 +112,7 @@ export default function DonateScreen() {
     }
   };
 
-  const handleExpiryDateChange = (event, selectedDate) => {
+  const handleExpiryDateChange = (event: any, selectedDate?: Date) => {
     setShowExpiryPicker(Platform.OS === 'ios');
     if (selectedDate) {
       // Ensure expiry date is after pickup date
@@ -117,55 +124,85 @@ export default function DonateScreen() {
     }
   };
 
-  const handleSubmit = () => {
-    if (!userId) {
-      Alert.alert('Error', 'Please log in to donate');
-      return;
+  const validateForm = () => {
+    if (!foodDetails.trim()) {
+      Alert.alert('Error', 'Please enter food description');
+      return false;
     }
-
-    if (!foodDetails || !quantity || !foodType || !pickupLocation) {
-      Alert.alert('Missing Information', 'Please fill in all required fields');
-      return;
+    if (!quantity || parseInt(quantity) <= 0) {
+      Alert.alert('Error', 'Please enter a valid quantity');
+      return false;
     }
-
-    createDonation({
-      variables: {
-        input: {
-          donar_id: userId,
-          food_details: foodDetails,
-          serving_quantity: parseInt(quantity, 10),
-          food_type: foodType,
-          pickup_location: pickupLocation,
-          pickup_time: pickupDate.toISOString(),
-          expiry_date: expiryDate.toISOString(),
-          special_instructions: additionalNotes,
-          status: 'PENDING',
-          is_cooling_required : isCoolingRequired
-        }
-      }
-    });
+    if (!foodType) {
+      Alert.alert('Error', 'Please select food type');
+      return false;
+    }
+    if (!pickupLocation.trim()) {
+      Alert.alert('Error', 'Please enter pickup location');
+      return false;
+    }
+    return true;
   };
 
-  const formatDate = (date) => {
+  const handleSubmit = async () => {
+    if (!userId) {
+      Alert.alert('Error', 'Please log in to donate');
+      router.replace('/(auth)/login');
+      return;
+    }
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await createDonation({
+        variables: {
+          input: {
+            donar_id: userId,
+            food_details: foodDetails.trim(),
+            serving_quantity: parseInt(quantity, 10),
+            food_type: foodType,
+            pickup_location: pickupLocation.trim(),
+            pickup_time: pickupDate.toISOString(),
+            expiry_date: expiryDate.toISOString(),
+            special_instructions: additionalNotes.trim(),
+            status: 'PENDING',
+            is_cooling_required: isCoolingRequired
+          }
+        }
+      });
+    } catch (error) {
+      setIsSubmitting(false);
+      Alert.alert('Error', 'Failed to create donation. Please try again.');
+    }
+  };
+
+  const formatDate = (date: Date) => {
     return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
 
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={{ flex: 1 }}
+      style={styles.keyboardView}
     >
-      <ScrollView style={styles.container}>
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <Stack.Screen
           options={{
             title: 'Donate Food',
-            headerShown: false,
+            headerShown: true,
+            headerStyle: {
+              backgroundColor: Colors.light.tint,
+            },
+            headerTintColor: '#fff',
           }}
         />
 
         <View style={styles.form}>
           <Text style={styles.title}>Donate Food</Text>
-          <Text style={styles.subtitle}>Fill in the details below to donate food </Text>
+          <Text style={styles.subtitle}>Fill in the details below to donate food</Text>
 
           <View style={styles.formField}>
             <Text style={styles.label}>Food Description*</Text>
@@ -175,6 +212,7 @@ export default function DonateScreen() {
               value={foodDetails}
               onChangeText={setFoodDetails}
               multiline
+              maxLength={200}
             />
           </View>
 
@@ -184,8 +222,9 @@ export default function DonateScreen() {
               style={styles.input}
               placeholder="Number of servings"
               value={quantity}
-              onChangeText={setQuantity}
+              onChangeText={(text) => setQuantity(text.replace(/[^0-9]/g, ''))}
               keyboardType="numeric"
+              maxLength={4}
             />
           </View>
 
@@ -200,20 +239,20 @@ export default function DonateScreen() {
               valueField="value"
               placeholder="Select food type"
               value={foodType}
-              onChange={(item) => {
-                setFoodType(item.value);
-              }}
+              onChange={(item) => setFoodType(item.value)}
             />
           </View>
 
           <View style={styles.formField}>
             <Text style={styles.label}>Pickup Location*</Text>
             <TextInput
-              style={styles.input}
-              placeholder="Enter pickup address"
+              style={[styles.input, styles.textArea]}
+              placeholder="Enter complete pickup address"
               value={pickupLocation}
               onChangeText={setPickupLocation}
               multiline
+              numberOfLines={3}
+              maxLength={300}
             />
           </View>
 
@@ -266,11 +305,12 @@ export default function DonateScreen() {
               onChangeText={setAdditionalNotes}
               multiline
               numberOfLines={4}
+              maxLength={500}
             />
           </View>
 
-          <View style={styles.formField}> 
-            <Text style={styles.label}>is cooling required?</Text>
+          <View style={styles.switchField}>
+            <Text style={styles.label}>Cooling Required?</Text>
             <Switch
               value={isCoolingRequired}
               onValueChange={setIsCoolingRequired}
@@ -278,17 +318,20 @@ export default function DonateScreen() {
                 true: Colors.light.tint,
                 false: '#ccc',
               }}
+              thumbColor={isCoolingRequired ? Colors.light.tint : '#f4f3f4'}
             />
           </View>
 
           <TouchableOpacity 
-            style={[styles.button, loading && styles.buttonDisabled]} 
+            style={[styles.button, isSubmitting && styles.buttonDisabled]} 
             onPress={handleSubmit}
-            disabled={loading}
+            disabled={isSubmitting}
           >
-            <Text style={styles.buttonText}>
-              {loading ? 'Submitting...' : 'Donate Now'}
-            </Text>
+            {isSubmitting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Donate Now</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -297,6 +340,9 @@ export default function DonateScreen() {
 }
 
 const styles = StyleSheet.create({
+  keyboardView: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: '#fff',
@@ -317,6 +363,12 @@ const styles = StyleSheet.create({
   },
   formField: {
     marginBottom: 20,
+  },
+  switchField: {
+    marginBottom: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   label: {
     fontSize: 16,

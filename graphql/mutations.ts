@@ -106,13 +106,14 @@ export const CREATE_DONATION = gql`
       id
       donar_id
       food_details
-      pickup_location
-      status
-      created_at
-      pickup_time
-      expiry_date
       serving_quantity
       food_type
+      pickup_location
+      pickup_time
+      expiry_date
+      special_instructions
+      status
+      is_cooling_required
       created_at
     }
   }
