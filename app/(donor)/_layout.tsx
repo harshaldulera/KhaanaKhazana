@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
-import { FontAwesome } from '@expo/vector-icons';
-import Topbar from '@/components/common/topbar';
+import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
+import { Colors } from '@/constants/Colors';
 
 export default function DonorLayout() {
   return (
@@ -12,25 +12,38 @@ export default function DonorLayout() {
           backgroundColor: '#fff',
           borderTopWidth: 1,
           borderTopColor: '#eee',
-          // display: 'none',
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
         },
+        headerShown: false,
       }}
     >
-      {/* <Topbar /> */}
       <Tabs.Screen
         name="dashboard"
         options={{
-          title: 'Dashboard',
+          title: 'Home',
           tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="home" size={size} color={color} />
+            <FontAwesome5 name="home" size={size} color={color} />
           ),
-          headerShown: false,
         }}
       />
       <Tabs.Screen
-        name="index"
+        name="donate"
         options={{
-          href: null,
+          title: 'Donate',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="restaurant" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: 'History',
+          tabBarIcon: ({ color, size }) => (
+            <FontAwesome5 name="history" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
@@ -38,52 +51,30 @@ export default function DonorLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="user" size={size} color={color} />
+            <FontAwesome5 name="user" size={size} color={color} />
           ),
-          headerShown: false,
         }}
       />
-        <Tabs.Screen
-          name="history"
-          options={{
-            title: 'History',
-            tabBarIcon: ({ color, size }) => (
-              <FontAwesome name="list" size={size} color={color} />
-            ),
-            headerShown: false,
-          }}
-        />
+      
+      {/* Hidden screens */}
+      <Tabs.Screen
+        name="index"
+        options={{
+          href: null,
+        }}
+      />
       <Tabs.Screen
         name="ngodisplay"
         options={{
-          title: 'NGO Details',
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="circle" size={size} color={color} />
-          ),
-          headerShown: false,
+          href: null,
         }}
       />
       <Tabs.Screen
         name="ngolist"
         options={{
-          title: 'NGO List',
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome name="circle" size={size} color={color} />
-          ),
-          headerShown: false,
+          href: null, 
         }}
       />
-      <Tabs.Screen 
-        name='donate'
-        options={{
-          title: 'Donate',
-          tabBarIcon: ({ color, size }) => (
-            <FontAwesome name='shopping-cart' size={size} color={color} />
-          ),
-          headerShown: false,
-        }}
-      />
-      
     </Tabs>
   );
 } 

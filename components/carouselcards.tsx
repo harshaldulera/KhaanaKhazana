@@ -1,10 +1,10 @@
 import { Colors } from '@/constants/Colors';
-import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, FlatList } from 'react-native';
+import React, { useRef, useState, useEffect } from 'react';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Dimensions, FlatList, ViewToken } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth,  } = Dimensions.get('window');
 
 interface CarouselItem {
     id: string;
@@ -65,8 +65,48 @@ const data: CarouselItem[] = [
 ];
 
 const CarouselCards: React.FC = () => {
+    const flatListRef = useRef<FlatList>(null);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [userScrolling, setUserScrolling] = useState(false);
+    const viewabilityConfig = { itemVisiblePercentThreshold: 50 };
+
     const handleDonatePress = () => {
         router.replace("/(donor)/donate");
+    };
+
+    useEffect(() => {
+        // Initialize autoplay timer
+        const autoScrollTimer = setInterval(() => {
+            if (flatListRef.current && !userScrolling) {
+                const nextIndex = (currentIndex + 1) % data.length;
+                flatListRef.current.scrollToIndex({
+                    index: nextIndex,
+                    animated: true
+                });
+                setCurrentIndex(nextIndex);
+            }
+        }, 3000);
+
+        // Clean up timer
+        return () => clearInterval(autoScrollTimer);
+    }, [currentIndex, userScrolling]);
+
+    const onViewableItemsChanged = useRef(({ viewableItems }: { 
+        viewableItems: Array<ViewToken>, 
+        changed: Array<ViewToken> 
+    }) => {
+        if (viewableItems.length > 0 && viewableItems[0].index !== null) {
+            setCurrentIndex(viewableItems[0].index);
+        }
+    }).current;
+
+    const handleScrollBegin = () => {
+        setUserScrolling(true);
+    };
+
+    const handleScrollEnd = () => {
+        // Reset after a short delay to prevent flickering
+        setTimeout(() => setUserScrolling(false), 1500);
     };
 
     const renderItem = ({ item }: { item: CarouselItem }) => {
@@ -112,16 +152,35 @@ const CarouselCards: React.FC = () => {
     };
 
     return (
-        <FlatList
-            data={data}
-            renderItem={renderItem}
-            keyExtractor={(item: CarouselItem) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={screenWidth - 32}
-            decelerationRate="fast"
-            contentContainerStyle={styles.container}
-        />
+        <View>
+            <FlatList
+                ref={flatListRef}
+                data={data}
+                renderItem={renderItem}
+                keyExtractor={(item: CarouselItem) => item.id}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                snapToInterval={screenWidth - 32}
+                decelerationRate="fast"
+                contentContainerStyle={styles.container}
+                viewabilityConfig={viewabilityConfig}
+                onViewableItemsChanged={onViewableItemsChanged}
+                onScrollBeginDrag={handleScrollBegin}
+                onScrollEndDrag={handleScrollEnd}
+                onMomentumScrollEnd={handleScrollEnd}
+            />
+            <View style={styles.paginationContainer}>
+                {data.map((_, index) => (
+                    <View
+                        key={index}
+                        style={[
+                            styles.paginationDot,
+                            index === currentIndex ? styles.paginationDotActive : {}
+                        ]}
+                    />
+                ))}
+            </View>
+        </View>
     );
 };
 
@@ -219,6 +278,24 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
+    },
+    paginationContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 10,
+    },
+    paginationDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#ccc',
+        marginHorizontal: 4,
+    },
+    paginationDotActive: {
+        backgroundColor: Colors.light.tint,
+        width: 12,
+        height: 8,
     }
 });
 

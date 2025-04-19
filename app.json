@@ -49,12 +49,6 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow KhaanaKhazana to use your location."
         }
-      ],
-      [
-        "@rnmapbox/maps",
-        {
-          "mapboxPublicKey": "pk.eyJ1IjoibWFoZWtndWRoa2EiLCJhIjoiY2x0dGJtZGVyMGJtZTJrcXZ4ZGVtZGJwZiJ9.Ry_-OaeLxHBVlm5y_CUo8g"
-        }
       ]
     ],
     "experiments": {

@@ -10,12 +10,12 @@ import {
   Platform,
   KeyboardAvoidingView,
   Switch,
-  ActivityIndicator
+  ActivityIndicator,
+  Modal
 } from 'react-native';
 import { Stack } from 'expo-router';
 import { router } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { Dropdown } from 'react-native-element-dropdown';
 import { useMutation } from '@apollo/client';
 import { CREATE_DONATION } from '../../graphql/mutations';
@@ -26,6 +26,300 @@ const foodTypes = [
   { label: 'Vegetarian', value: 'VEG' },
   { label: 'Non-Vegetarian', value: 'NON_VEG' },
 ];
+
+// Custom Simple Date Picker Component interface
+interface CustomDatePickerProps {
+  date: Date;
+  onDateChange: (date: Date) => void;
+  onClose: () => void;
+  isVisible: boolean;
+  title: string;
+  minimumDate?: Date | null;
+}
+
+// Custom Simple Date Picker Component
+const CustomDatePicker: React.FC<CustomDatePickerProps> = ({ 
+  date, 
+  onDateChange, 
+  onClose, 
+  isVisible, 
+  title, 
+  minimumDate 
+}) => {
+  const [selectedDate, setSelectedDate] = useState(date);
+  const [selectedTime, setSelectedTime] = useState({
+    hours: date.getHours(),
+    minutes: date.getMinutes(),
+  });
+  
+  // Generate arrays for picker values
+  const days: number[] = Array.from({ length: 31 }, (_, i) => i + 1);
+  const months: string[] = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const years: number[] = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() + i);
+  const hours: number[] = Array.from({ length: 24 }, (_, i) => i);
+  const minutes: number[] = Array.from({ length: 12 }, (_, i) => i * 5);
+  
+  const handleConfirm = (): void => {
+    const newDate = new Date(selectedDate);
+    newDate.setHours(selectedTime.hours);
+    newDate.setMinutes(selectedTime.minutes);
+    
+    // Check if date is valid
+    if (minimumDate && newDate < minimumDate) {
+      Alert.alert('Invalid Date', 'Selected date cannot be before the minimum allowed date');
+      return;
+    }
+    
+    onDateChange(newDate);
+    onClose();
+  };
+  
+  const handleDateChange = (type: string, value: number | string): void => {
+    const newDate = new Date(selectedDate);
+    
+    switch (type) {
+      case 'day':
+        if (typeof value === 'number') {
+          newDate.setDate(value);
+        }
+        break;
+      case 'month':
+        if (typeof value === 'string') {
+          newDate.setMonth(months.indexOf(value));
+        }
+        break;
+      case 'year':
+        if (typeof value === 'number') {
+          newDate.setFullYear(value);
+        }
+        break;
+    }
+    
+    setSelectedDate(newDate);
+  };
+  
+  const handleTimeChange = (type: string, value: number): void => {
+    setSelectedTime(prev => ({
+      ...prev,
+      [type]: value
+    }));
+  };
+  
+  const renderDayPickerItems = (
+    items: number[], 
+    current: number,
+    onChange: (type: string, value: number) => void
+  ) => {
+    return items.map((item, index) => (
+      <TouchableOpacity
+        key={index}
+        style={[
+          styles.pickerItem,
+          current === item ? styles.pickerItemSelected : null
+        ]}
+        onPress={() => onChange('day', item)}
+      >
+        <Text style={[
+          styles.pickerItemText,
+          current === item ? styles.pickerItemTextSelected : null
+        ]}>
+          {item}
+        </Text>
+      </TouchableOpacity>
+    ));
+  };
+
+  const renderMonthPickerItems = (
+    items: string[], 
+    current: string,
+    onChange: (type: string, value: string) => void
+  ) => {
+    return items.map((item, index) => (
+      <TouchableOpacity
+        key={index}
+        style={[
+          styles.pickerItem,
+          current === item ? styles.pickerItemSelected : null
+        ]}
+        onPress={() => onChange('month', item)}
+      >
+        <Text style={[
+          styles.pickerItemText,
+          current === item ? styles.pickerItemTextSelected : null
+        ]}>
+          {item}
+        </Text>
+      </TouchableOpacity>
+    ));
+  };
+
+  const renderYearPickerItems = (
+    items: number[], 
+    current: number,
+    onChange: (type: string, value: number) => void
+  ) => {
+    return items.map((item, index) => (
+      <TouchableOpacity
+        key={index}
+        style={[
+          styles.pickerItem,
+          current === item ? styles.pickerItemSelected : null
+        ]}
+        onPress={() => onChange('year', item)}
+      >
+        <Text style={[
+          styles.pickerItemText,
+          current === item ? styles.pickerItemTextSelected : null
+        ]}>
+          {item}
+        </Text>
+      </TouchableOpacity>
+    ));
+  };
+
+  const renderTimePickerItems = (
+    items: number[], 
+    type: 'hour' | 'minute',
+    current: number,
+    onChange: (type: string, value: number) => void
+  ): React.ReactNode => {
+    return items.map((item, index) => (
+      <TouchableOpacity
+        key={index}
+        style={[
+          styles.pickerItem,
+          current === item ? styles.pickerItemSelected : null
+        ]}
+        onPress={() => onChange(type, item)}
+      >
+        <Text style={[
+          styles.pickerItemText,
+          current === item ? styles.pickerItemTextSelected : null
+        ]}>
+          {item.toString().padStart(2, '0')}
+        </Text>
+      </TouchableOpacity>
+    ));
+  };
+  
+  if (!isVisible) return null;
+  
+  return (
+    <Modal
+      transparent={true}
+      animationType="fade"
+      visible={isVisible}
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.pickerHeader}>
+            <Text style={styles.pickerTitle}>{title}</Text>
+            <TouchableOpacity onPress={onClose}>
+              <FontAwesome name="times" size={20} color="#666" />
+            </TouchableOpacity>
+          </View>
+          
+          <Text style={styles.pickerSectionTitle}>Date</Text>
+          <View style={styles.datePickerContainer}>
+            <View style={styles.pickerColumn}>
+              <Text style={styles.pickerLabel}>Day</Text>
+              <ScrollView 
+                style={styles.pickerScroller}
+                showsVerticalScrollIndicator={false}
+              >
+                {renderDayPickerItems(
+                  days, 
+                  selectedDate.getDate(), 
+                  handleDateChange
+                )}
+              </ScrollView>
+            </View>
+            
+            <View style={styles.pickerColumn}>
+              <Text style={styles.pickerLabel}>Month</Text>
+              <ScrollView 
+                style={styles.pickerScroller}
+                showsVerticalScrollIndicator={false}
+              >
+                {renderMonthPickerItems(
+                  months, 
+                  months[selectedDate.getMonth()], 
+                  handleDateChange
+                )}
+              </ScrollView>
+            </View>
+            
+            <View style={styles.pickerColumn}>
+              <Text style={styles.pickerLabel}>Year</Text>
+              <ScrollView 
+                style={styles.pickerScroller}
+                showsVerticalScrollIndicator={false}
+              >
+                {renderYearPickerItems(
+                  years, 
+                  selectedDate.getFullYear(), 
+                  handleDateChange
+                )}
+              </ScrollView>
+            </View>
+          </View>
+          
+          <Text style={styles.pickerSectionTitle}>Time</Text>
+          <View style={styles.timePickerContainer}>
+            <View style={styles.pickerColumn}>
+              <Text style={styles.pickerLabel}>Hour</Text>
+              <ScrollView 
+                style={styles.pickerScroller}
+                showsVerticalScrollIndicator={false}
+              >
+                {renderTimePickerItems(
+                  hours, 
+                  'hour', 
+                  selectedTime.hours, 
+                  handleTimeChange
+                )}
+              </ScrollView>
+            </View>
+            
+            <Text style={styles.timeSeparator}>:</Text>
+            
+            <View style={styles.pickerColumn}>
+              <Text style={styles.pickerLabel}>Minute</Text>
+              <ScrollView 
+                style={styles.pickerScroller}
+                showsVerticalScrollIndicator={false}
+              >
+                {renderTimePickerItems(
+                  minutes, 
+                  'minute', 
+                  Math.floor(selectedTime.minutes / 5) * 5, 
+                  handleTimeChange
+                )}
+              </ScrollView>
+            </View>
+          </View>
+          
+          <View style={styles.pickerActions}>
+            <TouchableOpacity 
+              style={styles.cancelButton} 
+              onPress={onClose}
+            >
+              <Text style={styles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.confirmButton} 
+              onPress={handleConfirm}
+            >
+              <Text style={styles.confirmText}>Confirm</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 export default function DonateScreen() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -45,7 +339,7 @@ export default function DonateScreen() {
     onCompleted: (data) => {
       setIsSubmitting(false);
       router.replace({
-        pathname: '/(donor)/finding-volunteer',
+        pathname: "/(donor)/finding-volunteer" as any,
         params: { donationId: data.insert_donar_transaction_one.id }
       });
       resetForm();
@@ -88,30 +382,24 @@ export default function DonateScreen() {
     setIsCoolingRequired(false);
   };
 
-  const handlePickupDateChange = (event: any, selectedDate?: Date) => {
-    setShowPickupPicker(Platform.OS === 'ios');
-    if (selectedDate) {
-      setPickupDate(selectedDate);
-      
-      // Update expiry date to be at least one hour after pickup date
-      const newExpiryDate = new Date(selectedDate);
-      newExpiryDate.setHours(newExpiryDate.getHours() + 1);
-      
-      if (expiryDate < newExpiryDate) {
-        setExpiryDate(newExpiryDate);
-      }
+  const handlePickupDateChange = (selectedDate: Date) => {
+    setPickupDate(selectedDate);
+    
+    // Update expiry date to be at least one hour after pickup date
+    const newExpiryDate = new Date(selectedDate);
+    newExpiryDate.setHours(newExpiryDate.getHours() + 1);
+    
+    if (expiryDate < newExpiryDate) {
+      setExpiryDate(newExpiryDate);
     }
   };
 
-  const handleExpiryDateChange = (event: any, selectedDate?: Date) => {
-    setShowExpiryPicker(Platform.OS === 'ios');
-    if (selectedDate) {
-      // Ensure expiry date is after pickup date
-      if (selectedDate > pickupDate) {
-        setExpiryDate(selectedDate);
-      } else {
-        Alert.alert('Invalid Date', 'Expiry date must be after pickup date');
-      }
+  const handleExpiryDateChange = (selectedDate: Date) => {
+    // Ensure expiry date is after pickup date
+    if (selectedDate > pickupDate) {
+      setExpiryDate(selectedDate);
+    } else {
+      Alert.alert('Invalid Date', 'Expiry date must be after pickup date');
     }
   };
 
@@ -256,15 +544,15 @@ export default function DonateScreen() {
               <Text>{formatDate(pickupDate)}</Text>
               <FontAwesome name="calendar" size={20} color="#666" />
             </TouchableOpacity>
-            {showPickupPicker && (
-              <DateTimePicker
-                value={pickupDate}
-                mode="datetime"
-                display="default"
-                onChange={handlePickupDateChange}
-                minimumDate={new Date()}
-              />
-            )}
+            
+            <CustomDatePicker
+              date={pickupDate}
+              onDateChange={handlePickupDateChange}
+              onClose={() => setShowPickupPicker(false)}
+              isVisible={showPickupPicker}
+              title="Select Pickup Date & Time"
+              minimumDate={new Date()}
+            />
           </View>
 
           <View style={styles.formField}>
@@ -276,15 +564,15 @@ export default function DonateScreen() {
               <Text>{formatDate(expiryDate)}</Text>
               <FontAwesome name="calendar" size={20} color="#666" />
             </TouchableOpacity>
-            {showExpiryPicker && (
-              <DateTimePicker
-                value={expiryDate}
-                mode="datetime"
-                display="default"
-                onChange={handleExpiryDateChange}
-                minimumDate={pickupDate}
-              />
-            )}
+            
+            <CustomDatePicker
+              date={expiryDate}
+              onDateChange={handleExpiryDateChange}
+              onClose={() => setShowExpiryPicker(false)}
+              isVisible={showExpiryPicker}
+              title="Select Expiry Date & Time"
+              minimumDate={new Date(pickupDate.getTime() + 60 * 60 * 1000)}
+            />
           </View>
 
           <View style={styles.formField}>
@@ -419,5 +707,123 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    width: '90%',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  pickerHeader: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  pickerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  pickerSectionTitle: {
+    alignSelf: 'flex-start',
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#666',
+    marginBottom: 10,
+  },
+  datePickerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 15,
+  },
+  timePickerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 15,
+  },
+  pickerColumn: {
+    alignItems: 'center',
+    width: '30%',
+  },
+  pickerLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
+  },
+  pickerScroller: {
+    height: 120,
+    width: '100%',
+  },
+  pickerItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+  pickerItemSelected: {
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    borderRadius: 5,
+  },
+  pickerItemText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  pickerItemTextSelected: {
+    color: Colors.light.tint,
+    fontWeight: 'bold',
+  },
+  timeSeparator: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginHorizontal: 10,
+    marginTop: 30,
+  },
+  pickerActions: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 10,
+  },
+  cancelButton: {
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: '#f0f0f0',
+    width: '45%',
+    alignItems: 'center',
+  },
+  confirmButton: {
+    padding: 10,
+    borderRadius: 5,
+    backgroundColor: Colors.light.tint,
+    width: '45%',
+    alignItems: 'center',
+  },
+  cancelText: {
+    color: '#333',
+    fontWeight: '500',
+  },
+  confirmText: {
+    color: 'white',
+    fontWeight: '500',
   },
 }); 
