@@ -18,9 +18,33 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '@/constants/Colors';
 import * as Location from 'expo-location';
 
+interface Pickup {
+  id: string;
+  food_details: string;
+  pickup_location: string;
+  status: string;
+  created_at: string;
+  pickup_time: string;
+  expiry_date: string;
+  serving_quantity: number;
+  food_type: string;
+  donar: {
+    id: string;
+    name: string;
+    phone_number: string;
+    address: string;
+  };
+  ngo: {
+    id: string;
+    name: string;
+    phone_number: string;
+    address: string;
+  };
+}
+
 export default function AvailablePickupsScreen() {
-  const [userId, setUserId] = useState(null);
-  const [location, setLocation] = useState(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [location, setLocation] = useState<Location.LocationObjectCoords | null>(null);
 
   useEffect(() => {
     loadUserInfo();
@@ -32,7 +56,7 @@ export default function AvailablePickupsScreen() {
       const userInfo = await AsyncStorage.getItem('userInfo');
       if (userInfo) {
         const parsedInfo = JSON.parse(userInfo);
-        setUserId(parsedInfo.id);
+        setUserId(parsedInfo.id.toString());
       } else {
         Alert.alert('Error', 'Please log in to view available pickups');
         router.replace('/(auth)/login');
@@ -57,6 +81,7 @@ export default function AvailablePickupsScreen() {
     }
   };
 
+  // Fetch pending donations that have an NGO assigned but no volunteer
   const { loading, error, data, refetch } = useQuery(GET_AVAILABLE_PICKUPS, {
     fetchPolicy: 'network-only',
     pollInterval: 30000, // Poll every 30 seconds for updates
@@ -69,11 +94,8 @@ export default function AvailablePickupsScreen() {
         'You have been assigned to this pickup.',
         [
           { 
-            text: 'Track Pickup', 
-            onPress: () => router.push({
-              pathname: '/(volunteer)/tracking',
-              params: { transactionId: data.update_donar_transaction_by_pk.id }
-            })
+            text: 'View Dashboard', 
+            onPress: () => router.push('/(volunteer)/dashboard')
           }
         ]
       );
@@ -84,7 +106,7 @@ export default function AvailablePickupsScreen() {
     }
   });
 
-  const acceptPickup = (transactionId) => {
+  const acceptPickup = (transactionId: string) => {
     if (!userId) {
       Alert.alert('Error', 'You must be logged in to accept pickups');
       return;
@@ -110,12 +132,12 @@ export default function AvailablePickupsScreen() {
     );
   };
 
-  const openMaps = (address) => {
+  const openMaps = (address: string) => {
     const url = `https://maps.google.com/?q=${encodeURIComponent(address)}`;
     Linking.openURL(url);
   };
 
-  const calculateDistance = (pickup) => {
+  const calculateDistance = (pickup: Pickup) => {
     if (!location || !pickup) return null;
     
     // This is a simple distance calculation, for demo purposes
@@ -138,16 +160,16 @@ export default function AvailablePickupsScreen() {
     return `${distance.toFixed(1)} km away`;
   };
 
-  const deg2rad = (deg) => {
+  const deg2rad = (deg: number) => {
     return deg * (Math.PI/180);
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
 
-  const renderItem = ({ item }) => (
+  const renderItem = ({ item }: { item: Pickup }) => (
     <View style={styles.pickupItem}>
       <View style={styles.pickupHeader}>
         <Text style={styles.pickupId}>#{item.id}</Text>
@@ -161,7 +183,7 @@ export default function AvailablePickupsScreen() {
       <View style={styles.pickupInfoRow}>
         <FontAwesome name="cutlery" size={16} color="#666" style={styles.infoIcon} />
         <Text style={styles.infoText}>
-          {item.quantity} servings ({item.food_type})
+          {item.serving_quantity} servings ({item.food_type})
         </Text>
       </View>
 
@@ -214,7 +236,7 @@ export default function AvailablePickupsScreen() {
           <Text style={styles.contactName}>{item.donar.name}</Text>
           <TouchableOpacity 
             style={styles.callButton}
-            onPress={() => Linking.openURL(`tel:${item.donar.phoneNumber}`)}
+            onPress={() => Linking.openURL(`tel:${item.donar.phone_number}`)}
           >
             <FontAwesome name="phone" size={14} color="#fff" style={{ marginRight: 4 }} />
             <Text style={styles.callButtonText}>Call</Text>
@@ -226,7 +248,7 @@ export default function AvailablePickupsScreen() {
           <Text style={styles.contactName}>{item.ngo.name}</Text>
           <TouchableOpacity 
             style={styles.callButton}
-            onPress={() => Linking.openURL(`tel:${item.ngo.phoneNumber}`)}
+            onPress={() => Linking.openURL(`tel:${item.ngo.phone_number}`)}
           >
             <FontAwesome name="phone" size={14} color="#fff" style={{ marginRight: 4 }} />
             <Text style={styles.callButtonText}>Call</Text>

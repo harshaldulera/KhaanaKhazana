@@ -1,182 +1,235 @@
-import React, { useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Modal, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert
+} from 'react-native';
 import { router } from 'expo-router';
+import { FontAwesome } from '@expo/vector-icons';
+import { useQuery, useMutation } from '@apollo/client';
+import { GET_AVAILABLE_DONATIONS, UPDATE_DONATION_STATUS } from '../../graphql/mutations';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Colors } from '@/constants/Colors';
 
-// Mock data - will be replaced with GraphQL query
-const mockDonations = [
-  {
-    id: '1',
-    foodType: 'Cooked Rice',
-    quantity: '50 plates',
-    pickupAddress: 'Haiko, Powai',
-    pickupTime: '2:00 PM',
-    expiryTime: '8:00 PM',
-    status: 'pending',
-    donorName: 'Haiko Restaurants Pvt. Ltd.',
-    donorPhone: '+9313318868',
-  },
-  {
-    id: '2',
-    foodType: 'Bread',
-    quantity: '20 packets',
-    pickupAddress: '456 Park Ave, City',
-    pickupTime: '3:00 PM',
-    expiryTime: '9:00 PM',
-    status: 'pending',
-    donorName: 'Jane Smith',
-    donorPhone: '+0987654321',
-  },
-  {
-    id: '3',
-    foodType: 'Vegetables',
-    quantity: '10 kg',
-    pickupAddress: '789 Oak St, City',
-    pickupTime: '4:00 PM',
-    expiryTime: '10:00 PM',
-    status: 'accepted',
-    donorName: 'Mike Johnson',
-    donorPhone: '+1122334455',
-    volunteerName: 'Alex Brown',
-    volunteerPhone: '+5566778899',
-    volunteerLocation: '2.5 km away',
-  },
-];
+interface Donation {
+  id: number;
+  food_details: string;
+  pickup_location: string;
+  status: string;
+  created_at: string;
+  pickup_time: string;
+  expiry_date: string;
+  serving_quantity: number;
+  food_type: string;
+  donar: {
+    id: number;
+    name: string;
+    phone_number: string;
+  };
+}
 
-export default function NGODashboard() {
-  const [donations, setDonations] = useState(mockDonations);
-  const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
-  const [selectedDonation, setSelectedDonation] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState('');
+export default function AvailableDonationsScreen() {
+  const [userId, setUserId] = useState<number | null>(null);
 
-  const handleAcceptDonation = (donationId: string) => {
-    // TODO: Implement GraphQL mutation to accept donation
-    Alert.alert('Success', 'Donation request accepted! Volunteers will be notified.');
-    setDonations(donations.map(donation => 
-      donation.id === donationId 
-        ? { ...donation, status: 'accepted' }
-        : donation
-    ));
+  useEffect(() => {
+    loadUserInfo();
+  }, []);
+
+  const loadUserInfo = async () => {
+    try {
+      const userInfo = await AsyncStorage.getItem('userInfo');
+      if (userInfo) {
+        const parsedInfo = JSON.parse(userInfo);
+        setUserId(parsedInfo.id);
+      } else {
+        Alert.alert('Error', 'Please log in to view available donations');
+        router.replace('/(auth)/login');
+      }
+    } catch (error) {
+      console.error('Error loading user info:', error);
+    }
   };
 
-  const handleViewVolunteerLocation = (donationId: string) => {
-    // TODO: Implement map view with volunteer location
-    Alert.alert('Volunteer Location', 'Map view will be implemented here');
+  // Fetch available donations with polling for real-time updates
+  const { loading, error, data, refetch } = useQuery(GET_AVAILABLE_DONATIONS, {
+    fetchPolicy: 'network-only',
+    pollInterval: 30000, // Poll every 30 seconds for updates
+  });
+
+  const [updateDonationStatus, { loading: updating }] = useMutation(UPDATE_DONATION_STATUS, {
+    onCompleted: (data) => {
+      Alert.alert(
+        'Success!', 
+        'You have accepted the donation. A volunteer will be assigned for pickup.',
+        [
+          { 
+            text: 'View NGO Dashboard', 
+            onPress: () => router.push('/(ngo)/dashboard')
+          }
+        ]
+      );
+      refetch();
+    },
+    onError: (error) => {
+      Alert.alert('Error', error.message || 'There was an error accepting the donation');
+    }
+  });
+
+  const acceptDonation = (donationId: number) => {
+    if (!userId) {
+      Alert.alert('Error', 'You must be logged in to accept donations');
+      return;
+    }
+
+    Alert.alert(
+      'Accept Donation', 
+      'Are you sure you want to accept this donation?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Accept', 
+          onPress: () => {
+            updateDonationStatus({
+              variables: {
+                id: donationId,
+                status: 'PENDING',
+                ngo_id: userId
+              }
+            });
+          }
+        }
+      ]
+    );
   };
 
-  const handleOpenFeedbackModal = (donationId: string) => {
-    setSelectedDonation(donationId);
-    setFeedbackModalVisible(true);
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
 
-  const handleSubmitFeedback = () => {
-    if (!selectedDonation || !feedback.trim()) return;
+  const getTimeRemaining = (expiryDate: string) => {
+    const now = new Date();
+    const expiry = new Date(expiryDate);
+    const diff = expiry.getTime() - now.getTime();
     
-    // TODO: Implement GraphQL mutation to submit feedback
-    Alert.alert('Success', 'Feedback submitted successfully!');
-    setFeedback('');
-    setFeedbackModalVisible(false);
-    setSelectedDonation(null);
+    if (diff <= 0) {
+      return "Expired";
+    }
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    return `${hours}h ${minutes}m remaining`;
   };
 
-  const renderDonationItem = ({ item }: { item: typeof mockDonations[0] }) => (
-    <View style={styles.donationCard}>
+  const renderItem = ({ item }: { item: Donation }) => (
+    <View style={styles.donationItem}>
       <View style={styles.donationHeader}>
-        <Text style={styles.foodType}>{item.foodType}</Text>
-        <Text style={styles.quantity}>{item.quantity}</Text>
-      </View>
-      
-      <View style={styles.detailsContainer}>
-        <Text style={styles.detailText}>📍 {item.pickupAddress}</Text>
-        <Text style={styles.detailText}>🕒 Pickup: {item.pickupTime}</Text>
-        <Text style={styles.detailText}>⏰ Expires: {item.expiryTime}</Text>
-        <Text style={styles.detailText}>👤 Donor: {item.donorName}</Text>
-        <Text style={styles.detailText}>📱 Phone: {item.donorPhone}</Text>
+        <Text style={styles.donationId}>#{item.id}</Text>
+        <View style={styles.statusBadge}>
+          <Text style={styles.statusText}>{item.status}</Text>
+        </View>
       </View>
 
-      {item.status === 'pending' && (
-        <TouchableOpacity 
-          style={styles.acceptButton}
-          onPress={() => handleAcceptDonation(item.id)}
-        >
-          <Text style={styles.acceptButtonText}>Accept Donation</Text>
-        </TouchableOpacity>
-      )}
+      <Text style={styles.foodDetails}>{item.food_details}</Text>
       
-      {item.status === 'accepted' && (
-        <View>
-          <View style={styles.volunteerInfo}>
-            <Text style={styles.volunteerText}>🚚 Volunteer: {item.volunteerName}</Text>
-            <Text style={styles.volunteerText}>📱 Phone: {item.volunteerPhone}</Text>
-            <Text style={styles.volunteerText}>📍 {item.volunteerLocation}</Text>
-          </View>
-          
-          <View style={styles.actionButtons}>
-            <TouchableOpacity 
-              style={styles.locationButton}
-              onPress={() => handleViewVolunteerLocation(item.id)}
-            >
-              <Text style={styles.locationButtonText}>View Location</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.feedbackButton}
-              onPress={() => handleOpenFeedbackModal(item.id)}
-            >
-              <Text style={styles.feedbackButtonText}>Give Feedback</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )}
+      <View style={styles.donationInfoRow}>
+        <FontAwesome name="cutlery" size={16} color="#666" style={styles.infoIcon} />
+        <Text style={styles.infoText}>
+          {item.serving_quantity} servings ({item.food_type})
+        </Text>
+      </View>
+
+      <View style={styles.donationInfoRow}>
+        <FontAwesome name="map-marker" size={16} color="#666" style={styles.infoIcon} />
+        <Text style={styles.infoText}>{item.pickup_location}</Text>
+      </View>
+
+      <View style={styles.donationInfoRow}>
+        <FontAwesome name="clock-o" size={16} color="#666" style={styles.infoIcon} />
+        <Text style={styles.infoText}>Pickup: {formatDate(item.pickup_time)}</Text>
+      </View>
+
+      <View style={styles.donationInfoRow}>
+        <FontAwesome name="exclamation-circle" size={16} color="#F44336" style={styles.infoIcon} />
+        <Text style={[styles.infoText, { color: '#F44336' }]}>
+          {getTimeRemaining(item.expiry_date)}
+        </Text>
+      </View>
+
+      <View style={styles.donationInfoRow}>
+        <FontAwesome name="user" size={16} color="#666" style={styles.infoIcon} />
+        <Text style={styles.infoText}>
+          Donor: {item.donar.name}
+        </Text>
+      </View>
+
+      <TouchableOpacity 
+        style={styles.acceptButton}
+        onPress={() => acceptDonation(item.id)}
+        disabled={updating}
+      >
+        <FontAwesome name="check" size={16} color="#fff" style={{ marginRight: 8 }} />
+        <Text style={styles.acceptButtonText}>
+          {updating ? 'Accepting...' : 'Accept Donation'}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={Colors.light.tint} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Error loading donations</Text>
+        <Text style={styles.errorSubtext}>{error.message}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
+          <Text style={styles.retryButtonText}>Try Again</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const donations = data?.donar_transaction || [];
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Available Donations</Text>
-      <FlatList
-        data={donations}
-        renderItem={renderDonationItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContainer}
-      />
-
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={feedbackModalVisible}
-        onRequestClose={() => setFeedbackModalVisible(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Provide Feedback</Text>
-            <TextInput
-              style={styles.feedbackInput}
-              placeholder="Enter your feedback here..."
-              value={feedback}
-              onChangeText={setFeedback}
-              multiline
-              numberOfLines={4}
-            />
-            <View style={styles.modalButtons}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => {
-                  setFeedbackModalVisible(false);
-                  setSelectedDonation(null);
-                }}
-              >
-                <Text style={styles.modalButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.submitButton]}
-                onPress={handleSubmitFeedback}
-              >
-                <Text style={styles.modalButtonText}>Submit</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+       <Text style={{fontSize: 20, fontWeight: 'bold', marginBottom: 10, marginTop: 10, marginLeft: 10, marginRight: 10, textAlign: 'center', color: '#D84012'}}>Available Pickup Requests</Text>
+      {donations.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <FontAwesome name="inbox" size={64} color="#ccc" />
+          <Text style={styles.emptyTitle}>No Available Donations</Text>
+          <Text style={styles.emptySubtitle}>
+            When new donations are available, they will appear here
+          </Text>
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={() => refetch()}
+          >
+            <Text style={styles.refreshButtonText}>Refresh</Text>
+          </TouchableOpacity>
         </View>
-      </Modal>
+      ) : (
+        <FlatList
+          data={donations}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContainer}
+          refreshing={loading}
+          onRefresh={refetch}
+        />
+      )}
     </View>
   );
 }
@@ -184,161 +237,139 @@ export default function NGODashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f8f8f8',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    margin: 20,
-    color: '#FF6B6B',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
   },
-  listContainer: {
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
     padding: 20,
   },
-  donationCard: {
+  errorText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  errorSubtext: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: Colors.light.tint,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  listContainer: {
+    padding: 16,
+  },
+  donationItem: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
+    padding: 16,
+    marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 2,
+    elevation: 2,
   },
   donationHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
-  foodType: {
-    fontSize: 18,
+  donationId: {
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#333',
   },
-  quantity: {
-    fontSize: 16,
-    color: '#666',
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 16,
+    backgroundColor: '#F5A623',
   },
-  detailsContainer: {
-    marginBottom: 15,
+  statusText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
-  detailText: {
+  foodDetails: {
+    fontSize: 18,
+    fontWeight: '500',
+    marginBottom: 12,
+    color: '#333',
+  },
+  donationInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  infoIcon: {
+    marginRight: 8,
+    width: 20,
+    textAlign: 'center',
+  },
+  infoText: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 5,
+    flex: 1,
   },
   acceptButton: {
-    backgroundColor: '#FF6B6B',
+    backgroundColor: Colors.light.tint,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: 12,
     borderRadius: 8,
-    alignItems: 'center',
+    marginTop: 12,
   },
   acceptButtonText: {
     color: '#fff',
-    fontSize: 16,
     fontWeight: 'bold',
   },
-  volunteerInfo: {
-    backgroundColor: '#f0f8ff',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  volunteerText: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 5,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  locationButton: {
-    flex: 1,
-    backgroundColor: '#4CAF50',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginRight: 5,
-  },
-  locationButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  feedbackButton: {
-    flex: 1,
-    backgroundColor: '#2196F3',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginLeft: 5,
-  },
-  feedbackButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  modalContainer: {
+  emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 40,
   },
-  modalContent: {
-    width: '80%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 18,
+  emptyTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#333',
+    marginTop: 20,
+    marginBottom: 10,
   },
-  feedbackInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 15,
-    textAlignVertical: 'top',
-    minHeight: 100,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  modalButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginHorizontal: 5,
-  },
-  cancelButton: {
-    backgroundColor: '#f44336',
-  },
-  submitButton: {
-    backgroundColor: '#4CAF50',
-  },
-  modalButtonText: {
-    color: '#fff',
+  emptySubtitle: {
     fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 30,
+  },
+  refreshButton: {
+    backgroundColor: Colors.light.tint,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  refreshButtonText: {
+    color: '#fff',
     fontWeight: 'bold',
+    fontSize: 16,
   },
 }); 
