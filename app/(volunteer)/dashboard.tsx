@@ -5,7 +5,7 @@ import * as Location from 'expo-location';
 import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { useQuery, useMutation } from '@apollo/client';
-import { GET_AVAILABLE_PICKUPS, ASSIGN_VOLUNTEER } from '../../graphql/mutations';
+import { GET_AVAILABLE_PICKUPS, ASSIGN_VOLUNTEER, UPDATE_VOLUNTEER_STATUS } from '../../graphql/mutations';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Linking } from 'react-native';
 
@@ -37,11 +37,16 @@ export default function VolunteerDashboard() {
   const [userId, setUserId] = useState<string | null>(null);
   const [location, setLocation] = useState<Location.LocationObjectCoords | null>(null);
   const [isActive, setIsActive] = useState(false);
-  const [isLocationSharingEnabled, setIsLocationSharingEnabled] = useState(false);
+  const [locationInterval, setLocationInterval] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     loadUserInfo();
     requestLocationPermission();
+    return () => {
+      if (locationInterval) {
+        clearInterval(locationInterval);
+      }
+    };
   }, []);
 
   const loadUserInfo = async () => {
@@ -50,6 +55,7 @@ export default function VolunteerDashboard() {
       if (userInfo) {
         const parsedInfo = JSON.parse(userInfo);
         setUserId(parsedInfo.id.toString());
+        setIsActive(parsedInfo.is_available || false);
       }
     } catch (error) {
       console.error('Error loading user info:', error);
@@ -93,6 +99,53 @@ export default function VolunteerDashboard() {
       Alert.alert('Error', error.message || 'There was an error accepting the pickup');
     }
   });
+
+  const [updateVolunteerStatus] = useMutation(UPDATE_VOLUNTEER_STATUS, {
+    onError: (error) => {
+      console.error('Error updating volunteer status:', error);
+      Alert.alert('Error', 'Failed to update your status. Please try again.');
+    }
+  });
+
+  const startLocationUpdates = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'You need to grant location permission to use this feature');
+        return;
+      }
+
+      // Get initial location
+      const currentLocation = await Location.getCurrentPositionAsync({});
+      setLocation(currentLocation.coords);
+
+      // Update location every 30 seconds
+      const interval = setInterval(async () => {
+        try {
+          const newLocation = await Location.getCurrentPositionAsync({});
+          setLocation(newLocation.coords);
+          
+          if (userId && isActive && location) {
+            const coords = location as Location.LocationObjectCoords;
+            await updateVolunteerStatus({
+              variables: {
+                id: userId,
+                is_available: isActive,
+                latitude: coords.latitude,
+                longitude: coords.longitude
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Error updating location:', error);
+        }
+      }, 30000);
+
+      setLocationInterval(interval);
+    } catch (error) {
+      console.error('Error starting location updates:', error);
+    }
+  };
 
   const acceptPickup = (transactionId: string) => {
     if (!userId) {
@@ -155,7 +208,7 @@ export default function VolunteerDashboard() {
     return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
 
-  const toggleVolunteerStatus = () => {
+  const toggleVolunteerStatus = async () => {
     if (!location) {
       Alert.alert(
         'Location Permission Required',
@@ -165,9 +218,21 @@ export default function VolunteerDashboard() {
           { 
             text: 'Enable', 
             onPress: async () => {
-              const { status } = await Location.requestForegroundPermissionsAsync();
-              if (status === 'granted') {
-                setIsActive(true);
+              await startLocationUpdates();
+              if (location) {
+                const newStatus = !isActive;
+                setIsActive(newStatus);
+                if (userId) {
+                  const coords = location as Location.LocationObjectCoords;
+                  await updateVolunteerStatus({
+                    variables: {
+                      id: userId,
+                      is_available: newStatus,
+                      latitude: coords.latitude,
+                      longitude: coords.longitude
+                    }
+                  });
+                }
               }
             }
           }
@@ -175,7 +240,34 @@ export default function VolunteerDashboard() {
       );
       return;
     }
-    setIsActive(!isActive);
+
+    const newStatus = !isActive;
+    setIsActive(newStatus);
+    
+    if (userId) {
+      try {
+        const coords = location as Location.LocationObjectCoords;
+        await updateVolunteerStatus({
+          variables: {
+            id: userId,
+            is_available: newStatus,
+            latitude: coords.latitude,
+            longitude: coords.longitude
+          }
+        });
+
+        if (newStatus) {
+          startLocationUpdates();
+        } else if (locationInterval) {
+          clearInterval(locationInterval);
+          setLocationInterval(null);
+        }
+      } catch (error) {
+        console.error('Error updating volunteer status:', error);
+        Alert.alert('Error', 'Failed to update your status. Please try again.');
+        setIsActive(!newStatus); // Revert the toggle if update fails
+      }
+    }
   };
 
   const renderItem = ({ item }: { item: Pickup }) => (

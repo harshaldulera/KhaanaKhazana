@@ -162,6 +162,24 @@ export const UPDATE_VOLUNTEER_LOCATION = gql`
   }
 `;
 
+export const UPDATE_VOLUNTEER_STATUS = gql`
+  mutation UpdateVolunteerStatus($id: String!, $is_available: Boolean!, $latitude: Float!, $longitude: Float!) {
+    update_volunteer_by_pk(
+      pk_columns: { id: $id }
+      _set: {
+        is_available: $is_available
+        latitude: $latitude
+        longitude: $longitude
+      }
+    ) {
+      id
+      is_available
+      latitude
+      longitude
+    }
+  }
+`;
+
 // Query donations (no changes required)
 export const GET_DONOR_TRANSACTIONS = gql`
   query GetDonorTransactions($donor_id: bigint!) {
