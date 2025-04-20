@@ -268,13 +268,13 @@ export const GET_AVAILABLE_PICKUPS = gql`
       donar {
         id
         name
-        phoneNumber
+        phone_number
         address
       }
       ngo {
         id
         name
-        phoneNumber
+        phone_number
         address
       }
     }
