@@ -21,6 +21,8 @@ import { useMutation } from '@apollo/client';
 import { CREATE_DONATION } from '../../graphql/mutations';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '@/constants/Colors';
+import * as Animatable from 'react-native-animatable';
+import { AntDesign } from '@expo/vector-icons';
 
 const foodTypes = [
   { label: 'Vegetarian', value: 'VEG' },
@@ -334,15 +336,16 @@ export default function DonateScreen() {
   const [additionalNotes, setAdditionalNotes] = useState('');
   const [isCoolingRequired, setIsCoolingRequired] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const [createDonation] = useMutation(CREATE_DONATION, {
     onCompleted: (data) => {
       setIsSubmitting(false);
-      router.replace({
-        pathname: "/(donor)/finding-volunteer" as any,
-        params: { donationId: data.insert_donar_transaction_one.id }
-      });
-      resetForm();
+      setShowSuccess(true);
+      setTimeout(() => {
+        router.replace('/(donor)/dashboard');
+        resetForm();
+      }, 2000);
     },
     onError: (error) => {
       setIsSubmitting(false);
@@ -479,140 +482,164 @@ export default function DonateScreen() {
           }}
         />
 
-        <View style={styles.form}>
-          <Text style={styles.title}>Donate Food</Text>
-          <Text style={styles.subtitle}>Fill in the details below to donate food</Text>
-
-          <View style={styles.formField}>
-            <Text style={styles.label}>Food Description*</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Describe the food you're donating"
-              value={foodDetails}
-              onChangeText={setFoodDetails}
-              multiline
-              maxLength={200}
-            />
-          </View>
-
-          <View style={styles.formField}>
-            <Text style={styles.label}>Quantity (servings)*</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Number of servings"
-              value={quantity}
-              onChangeText={(text) => setQuantity(text.replace(/[^0-9]/g, ''))}
-              keyboardType="numeric"
-              maxLength={4}
-            />
-          </View>
-
-          <View style={styles.formField}>
-            <Text style={styles.label}>Food Type*</Text>
-            <Dropdown
-              style={styles.dropdown}
-              placeholderStyle={styles.placeholderStyle}
-              selectedTextStyle={styles.selectedTextStyle}
-              data={foodTypes}
-              labelField="label"
-              valueField="value"
-              placeholder="Select food type"
-              value={foodType}
-              onChange={(item) => setFoodType(item.value)}
-            />
-          </View>
-
-          <View style={styles.formField}>
-            <Text style={styles.label}>Pickup Location*</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Enter complete pickup address"
-              value={pickupLocation}
-              onChangeText={setPickupLocation}
-              multiline
-              numberOfLines={3}
-              maxLength={300}
-            />
-          </View>
-
-          <View style={styles.formField}>
-            <Text style={styles.label}>Pickup Date & Time*</Text>
-            <TouchableOpacity 
-              style={styles.dateInput}
-              onPress={() => setShowPickupPicker(true)}
-            >
-              <Text>{formatDate(pickupDate)}</Text>
-              <FontAwesome name="calendar" size={20} color="#666" />
-            </TouchableOpacity>
-            
-            <CustomDatePicker
-              date={pickupDate}
-              onDateChange={handlePickupDateChange}
-              onClose={() => setShowPickupPicker(false)}
-              isVisible={showPickupPicker}
-              title="Select Pickup Date & Time"
-              minimumDate={new Date()}
-            />
-          </View>
-
-          <View style={styles.formField}>
-            <Text style={styles.label}>Expiry Date & Time*</Text>
-            <TouchableOpacity 
-              style={styles.dateInput}
-              onPress={() => setShowExpiryPicker(true)}
-            >
-              <Text>{formatDate(expiryDate)}</Text>
-              <FontAwesome name="calendar" size={20} color="#666" />
-            </TouchableOpacity>
-            
-            <CustomDatePicker
-              date={expiryDate}
-              onDateChange={handleExpiryDateChange}
-              onClose={() => setShowExpiryPicker(false)}
-              isVisible={showExpiryPicker}
-              title="Select Expiry Date & Time"
-              minimumDate={new Date(pickupDate.getTime() + 60 * 60 * 1000)}
-            />
-          </View>
-
-          <View style={styles.formField}>
-            <Text style={styles.label}>Additional Notes</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Any special requirements or notes"
-              value={additionalNotes}
-              onChangeText={setAdditionalNotes}
-              multiline
-              numberOfLines={4}
-              maxLength={500}
-            />
-          </View>
-
-          <View style={styles.switchField}>
-            <Text style={styles.label}>Cooling Required?</Text>
-            <Switch
-              value={isCoolingRequired}
-              onValueChange={setIsCoolingRequired}
-              trackColor={{
-                true: Colors.light.tint,
-                false: '#ccc',
-              }}
-              thumbColor={isCoolingRequired ? Colors.light.tint : '#f4f3f4'}
-            />
-          </View>
-
-          <TouchableOpacity 
-            style={[styles.button, isSubmitting && styles.buttonDisabled]} 
-            onPress={handleSubmit}
-            disabled={isSubmitting}
+        {showSuccess ? (
+          <Animatable.View 
+            animation="bounceIn" 
+            style={styles.successContainer}
+            duration={1500}
           >
-            {isSubmitting ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Donate Now</Text>
-            )}
-          </TouchableOpacity>
-        </View>
+            <AntDesign name="checkcircle" size={80} color={Colors.light.tint} />
+            <Animatable.Text 
+              animation="fadeInUp"
+              delay={500}
+              style={styles.successText}
+            >
+              Donation Created Successfully!
+            </Animatable.Text>
+            <Animatable.Text 
+              animation="fadeInUp"
+              delay={1000}
+              style={styles.redirectText}
+            >
+              Redirecting to dashboard...
+            </Animatable.Text>
+          </Animatable.View>
+        ) : (
+          <View style={styles.form}>
+            <Text style={styles.title}>Donate Food</Text>
+            <Text style={styles.subtitle}>Fill in the details below to donate food</Text>
+
+            <View style={styles.formField}>
+              <Text style={styles.label}>Food Description*</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Describe the food you're donating"
+                value={foodDetails}
+                onChangeText={setFoodDetails}
+                multiline
+                maxLength={200}
+              />
+            </View>
+
+            <View style={styles.formField}>
+              <Text style={styles.label}>Quantity (servings)*</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Number of servings"
+                value={quantity}
+                onChangeText={(text) => setQuantity(text.replace(/[^0-9]/g, ''))}
+                keyboardType="numeric"
+                maxLength={4}
+              />
+            </View>
+
+            <View style={styles.formField}>
+              <Text style={styles.label}>Food Type*</Text>
+              <Dropdown
+                style={styles.dropdown}
+                placeholderStyle={styles.placeholderStyle}
+                selectedTextStyle={styles.selectedTextStyle}
+                data={foodTypes}
+                labelField="label"
+                valueField="value"
+                placeholder="Select food type"
+                value={foodType}
+                onChange={(item) => setFoodType(item.value)}
+              />
+            </View>
+
+            <View style={styles.formField}>
+              <Text style={styles.label}>Pickup Location*</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Enter complete pickup address"
+                value={pickupLocation}
+                onChangeText={setPickupLocation}
+                multiline
+                numberOfLines={3}
+                maxLength={300}
+              />
+            </View>
+
+            <View style={styles.formField}>
+              <Text style={styles.label}>Pickup Date & Time*</Text>
+              <TouchableOpacity 
+                style={styles.dateInput}
+                onPress={() => setShowPickupPicker(true)}
+              >
+                <Text>{formatDate(pickupDate)}</Text>
+                <FontAwesome name="calendar" size={20} color="#666" />
+              </TouchableOpacity>
+              
+              <CustomDatePicker
+                date={pickupDate}
+                onDateChange={handlePickupDateChange}
+                onClose={() => setShowPickupPicker(false)}
+                isVisible={showPickupPicker}
+                title="Select Pickup Date & Time"
+                minimumDate={new Date()}
+              />
+            </View>
+
+            <View style={styles.formField}>
+              <Text style={styles.label}>Expiry Date & Time*</Text>
+              <TouchableOpacity 
+                style={styles.dateInput}
+                onPress={() => setShowExpiryPicker(true)}
+              >
+                <Text>{formatDate(expiryDate)}</Text>
+                <FontAwesome name="calendar" size={20} color="#666" />
+              </TouchableOpacity>
+              
+              <CustomDatePicker
+                date={expiryDate}
+                onDateChange={handleExpiryDateChange}
+                onClose={() => setShowExpiryPicker(false)}
+                isVisible={showExpiryPicker}
+                title="Select Expiry Date & Time"
+                minimumDate={new Date(pickupDate.getTime() + 60 * 60 * 1000)}
+              />
+            </View>
+
+            <View style={styles.formField}>
+              <Text style={styles.label}>Additional Notes</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                placeholder="Any special requirements or notes"
+                value={additionalNotes}
+                onChangeText={setAdditionalNotes}
+                multiline
+                numberOfLines={4}
+                maxLength={500}
+              />
+            </View>
+
+            <View style={styles.switchField}>
+              <Text style={styles.label}>Cooling Required?</Text>
+              <Switch
+                value={isCoolingRequired}
+                onValueChange={setIsCoolingRequired}
+                trackColor={{
+                  true: Colors.light.tint,
+                  false: '#ccc',
+                }}
+                thumbColor={isCoolingRequired ? Colors.light.tint : '#f4f3f4'}
+              />
+            </View>
+
+            <TouchableOpacity 
+              style={[styles.button, isSubmitting && styles.buttonDisabled]} 
+              onPress={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Donate Now</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -825,5 +852,25 @@ const styles = StyleSheet.create({
   confirmText: {
     color: 'white',
     fontWeight: '500',
+  },
+  successContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    minHeight: 400,
+  },
+  successText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: Colors.light.tint,
+    marginTop: 20,
+    textAlign: 'center',
+  },
+  redirectText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 10,
+    textAlign: 'center',
   },
 }); 
