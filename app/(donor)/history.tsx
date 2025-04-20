@@ -22,18 +22,18 @@ interface Transaction {
   status: string;
   created_at: string;
   pickup_time: string;
-  expiry_time: string;
-  quantity: number;
+  expiry_date: string;
+  serving_quantity: number;
   food_type: string;
   ngo?: {
     id: string;
     name: string;
-    phoneNumber: string;
+    phone_number: string;
   };
   volunteer?: {
     id: string;
     name: string;
-    phoneNumber: string;
+    phone_number: string;
     current_latitude?: number;
     current_longitude?: number;
   };
@@ -41,7 +41,7 @@ interface Transaction {
 
 export default function HistoryScreen() {
   const router = useRouter();
-  const [userId, setUserId] = useState<number | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     loadUserInfo();
@@ -52,7 +52,7 @@ export default function HistoryScreen() {
       const userInfo = await AsyncStorage.getItem('userInfo');
       if (userInfo) {
         const parsedInfo = JSON.parse(userInfo);
-        setUserId(parsedInfo.id);
+        setUserId(parsedInfo.id.toString());
       } else {
         Alert.alert('Error', 'Please log in to view history');
         router.replace('/(auth)/login');
@@ -99,14 +99,22 @@ export default function HistoryScreen() {
     return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
   };
 
+  // Check if a donation is trackable (has NGO or volunteer assigned and isn't completed or cancelled)
+  const isTrackable = (item: Transaction): boolean => {
+    if (item.status === 'CANCELLED') return false;
+    return !!(item.ngo || (item.volunteer && item.volunteer.current_latitude));
+  };
+
   const renderItem = ({ item }: { item: Transaction }) => (
     <TouchableOpacity 
       style={styles.donationItem}
       onPress={() => {
-        router.push({
-          pathname: "/(donor)/tracking" as any,
-          params: { donationId: item.id }
-        });
+        if (isTrackable(item)) {
+          router.push({
+            pathname: "/(donor)/tracking",
+            params: { donationId: item.id }
+          });
+        }
       }}
     >
       <View style={styles.donationHeader}>
@@ -121,7 +129,7 @@ export default function HistoryScreen() {
       <View style={styles.donationInfoRow}>
         <FontAwesome name="cutlery" size={16} color="#666" style={styles.infoIcon} />
         <Text style={styles.infoText}>
-          {item.quantity} servings ({item.food_type})
+          {item.serving_quantity} servings ({item.food_type})
         </Text>
       </View>
 
@@ -144,18 +152,20 @@ export default function HistoryScreen() {
         </View>
       )}
 
-      <TouchableOpacity 
-        style={styles.trackButton}
-        onPress={() => {
-          router.push({
-            pathname: "/(donor)/tracking" as any,
-            params: { donationId: item.id }
-          });
-        }}
-      >
-        <FontAwesome name="map" size={16} color="#fff" style={{ marginRight: 8 }} />
-        <Text style={styles.trackButtonText}>Track Donation</Text>
-      </TouchableOpacity>
+      {isTrackable(item) && (
+        <TouchableOpacity 
+          style={styles.trackButton}
+          onPress={() => {
+            router.push({
+              pathname: "/(donor)/tracking",
+              params: { donationId: item.id }
+            });
+          }}
+        >
+          <FontAwesome name="map" size={16} color="#fff" style={{ marginRight: 8 }} />
+          <Text style={styles.trackButtonText}>Track Donation</Text>
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 
@@ -207,7 +217,7 @@ export default function HistoryScreen() {
           </Text>
           <TouchableOpacity
             style={styles.donateButton}
-            onPress={() => router.push("/(donor)/donate" as any)}
+            onPress={() => router.push("/(donor)/donate")}
           >
             <Text style={styles.donateButtonText}>Donate Now</Text>
           </TouchableOpacity>
@@ -322,8 +332,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   assignedInfo: {
-    marginTop: 4,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#F1F8E9',
     padding: 8,
     borderRadius: 8,
   },

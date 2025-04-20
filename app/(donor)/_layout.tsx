@@ -75,6 +75,12 @@ export default function DonorLayout() {
           href: null, 
         }}
       />
+      <Tabs.Screen
+        name="tracking"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 } 

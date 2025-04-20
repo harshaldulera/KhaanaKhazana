@@ -1,8 +1,33 @@
-import React from 'react';
-import { View, Text, FlatList, StyleSheet } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import React, { useState } from 'react';
+import { 
+  View, 
+  Text, 
+  FlatList, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Modal,
+  TextInput,
+  ActivityIndicator
+} from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { FontAwesome } from '@expo/vector-icons';
+import { Colors } from '@/constants/Colors';
+import { useMutation, gql } from '@apollo/client';
 
-// Mock data - will be replaced with GraphQL query
+// Add a new mutation for donor feedback
+const ADD_DONOR_FEEDBACK = gql`
+  mutation AddDonorFeedback($transaction_id: bigint!, $feedback: String!) {
+    update_donar_transaction_by_pk(
+      pk_columns: { id: $transaction_id }
+      _set: { donar_feedback: $feedback }
+    ) {
+      id
+      donar_feedback
+    }
+  }
+`;
+
+// Mock data as fallback
 const mockHistoryData = {
   donor: [
     {
@@ -84,68 +109,282 @@ const mockHistoryData = {
   ],
 };
 
-export default function HistoryScreen() {
-  const { role } = useLocalSearchParams();
-  const historyData = mockHistoryData[role as keyof typeof mockHistoryData] || [];
+// Interface for props
+interface HistoryScreenProps {
+  role?: string;
+  transactions?: any[];
+}
 
-  const renderHistoryItem = ({ item }: { item: any }) => (
-    <View style={styles.historyCard}>
-      <View style={styles.header}>
-        <Text style={styles.foodType}>{item.foodType}</Text>
-        <Text style={styles.quantity}>{item.quantity}</Text>
-      </View>
+export default function HistoryScreen({ role: propRole, transactions }: HistoryScreenProps) {
+  const params = useLocalSearchParams();
+  const router = useRouter();
+  const role = propRole || params.role as string || 'donor';
+  
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
+  
+  // If real transactions are provided, use them; otherwise use mock data
+  const historyData = transactions || mockHistoryData[role as keyof typeof mockHistoryData] || [];
 
-      <View style={styles.detailsContainer}>
-        {role === 'donor' && (
-          <>
-            <Text style={styles.detailText}>NGO: {item.ngoName}</Text>
-            <Text style={styles.detailText}>Volunteer: {item.volunteerName}</Text>
-          </>
-        )}
-        
-        {role === 'ngo' && (
-          <>
-            <Text style={styles.detailText}>Donor: {item.donorName}</Text>
-            <Text style={styles.detailText}>Phone: {item.donorPhone}</Text>
-            <Text style={styles.detailText}>Volunteer: {item.volunteerName}</Text>
-            <Text style={styles.detailText}>Phone: {item.volunteerPhone}</Text>
-          </>
-        )}
-        
-        {role === 'volunteer' && (
-          <>
-            <Text style={styles.detailText}>Donor: {item.donorName}</Text>
-            <Text style={styles.detailText}>NGO: {item.ngoName}</Text>
-          </>
-        )}
+  // Mutation for adding donor feedback
+  const [addFeedback, { loading: submittingFeedback }] = useMutation(ADD_DONOR_FEEDBACK, {
+    onCompleted: () => {
+      setFeedbackModalVisible(false);
+      setSelectedTransaction(null);
+      setFeedbackText('');
+      alert('Feedback submitted successfully!');
+    },
+    onError: (error) => {
+      alert(`Error submitting feedback: ${error.message}`);
+    }
+  });
 
-        <Text style={styles.detailText}>📍 Pickup: {item.pickupAddress}</Text>
-        <Text style={styles.detailText}>🏢 Dropoff: {item.dropoffAddress}</Text>
-        <Text style={styles.detailText}>🕒 Pickup Time: {item.pickupTime}</Text>
-        
-        {item.feedback && (
-          <View style={styles.feedbackContainer}>
-            <Text style={styles.feedbackLabel}>Feedback:</Text>
-            <Text style={styles.feedbackText}>{item.feedback}</Text>
+  const handleTrackDonation = (donationId: string) => {
+    router.push(`/(donor)/tracking?donationId=${donationId}`);
+  };
+
+  const handleAddFeedback = (item: any) => {
+    setSelectedTransaction(item);
+    setFeedbackText(item.donar_feedback || '');
+    setFeedbackModalVisible(true);
+  };
+
+  const submitFeedback = () => {
+    if (!selectedTransaction || !feedbackText.trim()) {
+      alert('Please enter your feedback');
+      return;
+    }
+
+    addFeedback({
+      variables: {
+        transaction_id: selectedTransaction.id,
+        feedback: feedbackText.trim()
+      }
+    });
+  };
+
+  // Format date helper
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+  };
+
+  // Prepare transaction data for rendering
+  const prepareTransactionData = (transaction: any) => {
+    if (!transaction) return null;
+    
+    // For transactions from API, convert to the format needed for rendering
+    if (transactions) {
+      switch (role) {
+        case 'donor':
+          return {
+            id: transaction.id,
+            foodType: transaction.food_details,
+            quantity: `${transaction.serving_quantity} servings (${transaction.food_type})`,
+            pickupAddress: transaction.pickup_location,
+            dropoffAddress: transaction.ngo?.address || 'Not assigned yet',
+            pickupTime: transaction.pickup_time,
+            status: transaction.status.toLowerCase(),
+            ngoName: transaction.ngo?.name || 'Not assigned yet',
+            volunteerName: transaction.volunteer?.name || 'Not assigned yet',
+            feedback: transaction.donar_feedback || '',
+          };
+        case 'ngo':
+          return {
+            id: transaction.id,
+            foodType: transaction.food_details,
+            quantity: `${transaction.serving_quantity} servings (${transaction.food_type})`,
+            donorName: transaction.donar?.name || '',
+            donorPhone: transaction.donar?.phone_number || '',
+            volunteerName: transaction.volunteer?.name || 'Not assigned yet',
+            volunteerPhone: transaction.volunteer?.phone_number || '',
+            pickupAddress: transaction.pickup_location,
+            dropoffAddress: transaction.ngo?.address || '',
+            pickupTime: transaction.pickup_time,
+            status: transaction.status.toLowerCase(),
+            feedback: transaction.donar_feedback || '',
+          };
+        case 'volunteer':
+          return {
+            id: transaction.id,
+            foodType: transaction.food_details,
+            quantity: `${transaction.serving_quantity} servings (${transaction.food_type})`,
+            pickupAddress: transaction.pickup_location,
+            dropoffAddress: transaction.ngo?.address || '',
+            pickupTime: transaction.pickup_time,
+            status: transaction.status.toLowerCase(),
+            donorName: transaction.donar?.name || '',
+            ngoName: transaction.ngo?.name || '',
+            feedback: transaction.donar_feedback || '',
+          };
+        default:
+          return transaction;
+      }
+    }
+    
+    // If using mock data, return as is
+    return transaction;
+  };
+
+  const renderHistoryItem = ({ item }: { item: any }) => {
+    const transactionData = prepareTransactionData(item);
+    if (!transactionData) return null;
+
+    return (
+      <View style={styles.historyCard}>
+        <View style={styles.header}>
+          <Text style={styles.foodType}>{transactionData.foodType}</Text>
+          <Text style={styles.quantity}>{transactionData.quantity}</Text>
+        </View>
+
+        <View style={styles.detailsContainer}>
+          {role === 'donor' && (
+            <>
+              <Text style={styles.detailText}>NGO: {transactionData.ngoName}</Text>
+              <Text style={styles.detailText}>Volunteer: {transactionData.volunteerName}</Text>
+            </>
+          )}
+          
+          {role === 'ngo' && (
+            <>
+              <Text style={styles.detailText}>Donor: {transactionData.donorName}</Text>
+              <Text style={styles.detailText}>Phone: {transactionData.donorPhone}</Text>
+              <Text style={styles.detailText}>Volunteer: {transactionData.volunteerName}</Text>
+              <Text style={styles.detailText}>Phone: {transactionData.volunteerPhone}</Text>
+            </>
+          )}
+          
+          {role === 'volunteer' && (
+            <>
+              <Text style={styles.detailText}>Donor: {transactionData.donorName}</Text>
+              <Text style={styles.detailText}>NGO: {transactionData.ngoName}</Text>
+            </>
+          )}
+
+          <Text style={styles.detailText}>📍 Pickup: {transactionData.pickupAddress}</Text>
+          {transactionData.dropoffAddress && (
+            <Text style={styles.detailText}>🏢 Dropoff: {transactionData.dropoffAddress}</Text>
+          )}
+          <Text style={styles.detailText}>🕒 Pickup Time: {
+            typeof transactionData.pickupTime === 'string' && transactionData.pickupTime.includes('T') 
+              ? formatDate(transactionData.pickupTime) 
+              : transactionData.pickupTime
+          }</Text>
+          
+          {transactionData.feedback && (
+            <View style={styles.feedbackContainer}>
+              <Text style={styles.feedbackLabel}>Donor Feedback:</Text>
+              <Text style={styles.feedbackText}>{transactionData.feedback}</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.cardFooter}>
+          <View style={[
+            styles.statusBadge,
+            {
+              backgroundColor: 
+                transactionData.status === 'completed' ? '#4CAF50' :
+                transactionData.status === 'cancelled' ? '#F44336' :
+                transactionData.status === 'in_transit' ? '#2196F3' :
+                '#FF9800'
+            }
+          ]}>
+            <Text style={styles.statusText}>
+              {transactionData.status.toUpperCase()}
+            </Text>
           </View>
-        )}
-      </View>
+          
+          <View style={styles.actionButtons}>
+            {role === 'donor' && (
+              <TouchableOpacity 
+                style={styles.trackButton}
+                onPress={() => handleTrackDonation(transactionData.id)}
+              >
+                <FontAwesome name="map-marker" size={14} color="#fff" />
+                <Text style={styles.trackButtonText}>Track</Text>
+              </TouchableOpacity>
+            )}
 
-      <View style={styles.completedBadge}>
-        <Text style={styles.completedText}>Completed</Text>
+            {role === 'ngo' && transactionData.status === 'completed' && !transactionData.feedback && (
+              <TouchableOpacity 
+                style={styles.feedbackButton}
+                onPress={() => handleAddFeedback(item)}
+              >
+                <FontAwesome name="comment" size={14} color="#fff" />
+                <Text style={styles.feedbackButtonText}>Add Feedback</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Delivery History</Text>
-      <FlatList
-        data={historyData}
-        renderItem={renderHistoryItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContainer}
-      />
+      
+      {historyData.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <FontAwesome name="inbox" size={64} color="#ccc" />
+          <Text style={styles.emptyTitle}>No History Yet</Text>
+          <Text style={styles.emptySubtitle}>
+            Your completed transactions will appear here
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={historyData}
+          renderItem={renderHistoryItem}
+          keyExtractor={item => item.id.toString()}
+          contentContainerStyle={styles.listContainer}
+        />
+      )}
+
+      {/* Feedback Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={feedbackModalVisible}
+        onRequestClose={() => setFeedbackModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Add Donor Feedback</Text>
+            
+            <TextInput
+              style={styles.feedbackInput}
+              placeholder="Enter your feedback about this donation..."
+              multiline
+              value={feedbackText}
+              onChangeText={setFeedbackText}
+            />
+            
+            <View style={styles.modalButtons}>
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setFeedbackModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.modalButton, styles.submitButton]}
+                onPress={submitFeedback}
+                disabled={submittingFeedback}
+              >
+                {submittingFeedback ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Text style={styles.modalButtonText}>Submit</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -163,6 +402,7 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 20,
+    paddingTop: 0,
   },
   historyCard: {
     backgroundColor: '#fff',
@@ -218,15 +458,118 @@ const styles = StyleSheet.create({
     color: '#666',
     fontStyle: 'italic',
   },
-  completedBadge: {
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statusBadge: {
     backgroundColor: '#4CAF50',
     padding: 8,
     borderRadius: 6,
-    alignSelf: 'flex-start',
   },
-  completedText: {
+  statusText: {
     color: '#fff',
     fontSize: 14,
     fontWeight: '500',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+  },
+  trackButton: {
+    backgroundColor: '#FF6B6B',
+    padding: 8,
+    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  trackButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 5,
+  },
+  feedbackButton: {
+    backgroundColor: '#007BFF',
+    padding: 8,
+    borderRadius: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  feedbackButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+    marginLeft: 5,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#666',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptySubtitle: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    width: '100%',
+    maxWidth: 500,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#333',
+  },
+  feedbackInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    minHeight: 100,
+    textAlignVertical: 'top',
+    marginBottom: 16,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  modalButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginLeft: 10,
+  },
+  cancelButton: {
+    backgroundColor: '#f2f2f2',
+  },
+  submitButton: {
+    backgroundColor: '#007BFF',
+  },
+  modalButtonText: {
+    fontWeight: 'bold',
+    color: '#333',
   },
 }); 

@@ -34,6 +34,7 @@ interface Donation {
 
 export default function AvailableDonationsScreen() {
   const [userId, setUserId] = useState<number | null>(null);
+  const [acceptingDonationId, setAcceptingDonationId] = useState<number | null>(null);
 
   useEffect(() => {
     loadUserInfo();
@@ -62,6 +63,7 @@ export default function AvailableDonationsScreen() {
 
   const [updateDonationStatus, { loading: updating }] = useMutation(UPDATE_DONATION_STATUS, {
     onCompleted: (data) => {
+      setAcceptingDonationId(null);
       Alert.alert(
         'Success!', 
         'You have accepted the donation. A volunteer will be assigned for pickup.',
@@ -75,6 +77,7 @@ export default function AvailableDonationsScreen() {
       refetch();
     },
     onError: (error) => {
+      setAcceptingDonationId(null);
       Alert.alert('Error', error.message || 'There was an error accepting the donation');
     }
   });
@@ -93,6 +96,7 @@ export default function AvailableDonationsScreen() {
         { 
           text: 'Accept', 
           onPress: () => {
+            setAcceptingDonationId(donationId);
             updateDonationStatus({
               variables: {
                 id: donationId,
@@ -126,60 +130,64 @@ export default function AvailableDonationsScreen() {
     return `${hours}h ${minutes}m remaining`;
   };
 
-  const renderItem = ({ item }: { item: Donation }) => (
-    <View style={styles.donationItem}>
-      <View style={styles.donationHeader}>
-        <Text style={styles.donationId}>#{item.id}</Text>
-        <View style={styles.statusBadge}>
-          <Text style={styles.statusText}>{item.status}</Text>
+  const renderItem = ({ item }: { item: Donation }) => {
+    const isAccepting = acceptingDonationId === item.id;
+    
+    return (
+      <View style={styles.donationItem}>
+        <View style={styles.donationHeader}>
+          <Text style={styles.donationId}>#{item.id}</Text>
+          <View style={styles.statusBadge}>
+            <Text style={styles.statusText}>{item.status}</Text>
+          </View>
         </View>
-      </View>
 
-      <Text style={styles.foodDetails}>{item.food_details}</Text>
-      
-      <View style={styles.donationInfoRow}>
-        <FontAwesome name="cutlery" size={16} color="#666" style={styles.infoIcon} />
-        <Text style={styles.infoText}>
-          {item.serving_quantity} servings ({item.food_type})
-        </Text>
-      </View>
+        <Text style={styles.foodDetails}>{item.food_details}</Text>
+        
+        <View style={styles.donationInfoRow}>
+          <FontAwesome name="cutlery" size={16} color="#666" style={styles.infoIcon} />
+          <Text style={styles.infoText}>
+            {item.serving_quantity} servings ({item.food_type})
+          </Text>
+        </View>
 
-      <View style={styles.donationInfoRow}>
-        <FontAwesome name="map-marker" size={16} color="#666" style={styles.infoIcon} />
-        <Text style={styles.infoText}>{item.pickup_location}</Text>
-      </View>
+        <View style={styles.donationInfoRow}>
+          <FontAwesome name="map-marker" size={16} color="#666" style={styles.infoIcon} />
+          <Text style={styles.infoText}>{item.pickup_location}</Text>
+        </View>
 
-      <View style={styles.donationInfoRow}>
-        <FontAwesome name="clock-o" size={16} color="#666" style={styles.infoIcon} />
-        <Text style={styles.infoText}>Pickup: {formatDate(item.pickup_time)}</Text>
-      </View>
+        <View style={styles.donationInfoRow}>
+          <FontAwesome name="clock-o" size={16} color="#666" style={styles.infoIcon} />
+          <Text style={styles.infoText}>Pickup: {formatDate(item.pickup_time)}</Text>
+        </View>
 
-      <View style={styles.donationInfoRow}>
-        <FontAwesome name="exclamation-circle" size={16} color="#F44336" style={styles.infoIcon} />
-        <Text style={[styles.infoText, { color: '#F44336' }]}>
-          {getTimeRemaining(item.expiry_date)}
-        </Text>
-      </View>
+        <View style={styles.donationInfoRow}>
+          <FontAwesome name="exclamation-circle" size={16} color="#F44336" style={styles.infoIcon} />
+          <Text style={[styles.infoText, { color: '#F44336' }]}>
+            {getTimeRemaining(item.expiry_date)}
+          </Text>
+        </View>
 
-      <View style={styles.donationInfoRow}>
-        <FontAwesome name="user" size={16} color="#666" style={styles.infoIcon} />
-        <Text style={styles.infoText}>
-          Donor: {item.donar.name}
-        </Text>
-      </View>
+        <View style={styles.donationInfoRow}>
+          <FontAwesome name="user" size={16} color="#666" style={styles.infoIcon} />
+          <Text style={styles.infoText}>
+            Donor: {item.donar.name}
+          </Text>
+        </View>
 
-      <TouchableOpacity 
-        style={styles.acceptButton}
-        onPress={() => acceptDonation(item.id)}
-        disabled={updating}
-      >
-        <FontAwesome name="check" size={16} color="#fff" style={{ marginRight: 8 }} />
-        <Text style={styles.acceptButtonText}>
-          {updating ? 'Accepting...' : 'Accept Donation'}
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
+        <TouchableOpacity 
+          style={styles.acceptButton}
+          onPress={() => acceptDonation(item.id)}
+          disabled={isAccepting || updating}
+        >
+          <FontAwesome name="check" size={16} color="#fff" style={{ marginRight: 8 }} />
+          <Text style={styles.acceptButtonText}>
+            {isAccepting ? 'Accepting...' : 'Accept Donation'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   if (loading) {
     return (
