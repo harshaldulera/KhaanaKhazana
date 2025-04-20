@@ -40,15 +40,14 @@ export const CREATE_VOLUNTEER = gql`
       phone_number
       vehicle_number
       vehicle_type
-      latitude
-      longitude
+      current_location
       kyc_document
       availability
     }
   }
 `;
 
-// Login queries (split by role)
+// Login queries
 export const LOGIN_DONOR = gql`
   query LoginDonor($email: String!, $password: String!) {
     donar(where: { email: { _eq: $email }, password: { _eq: $password } }) {
@@ -79,7 +78,6 @@ export const LOGIN_VOLUNTEER = gql`
   }
 `;
 
-// Combined login query for all roles
 export const LOGIN_USER = gql`
   query LoginUser($email: String!, $password: String!) {
     donar(where: { email: { _eq: $email }, password: { _eq: $password } }) {
@@ -154,34 +152,33 @@ export const UPDATE_VOLUNTEER_LOCATION = gql`
   ) {
     update_volunteer_by_pk(
       pk_columns: { id: $volunteer_id }
-      _set: { latitude: $latitude, longitude: $longitude }
+      _set: { current_latitude: $latitude, current_longitude: $longitude }
     ) {
       id
-      latitude
-      longitude
+      current_latitude
+      current_longitude
     }
   }
 `;
 
 export const UPDATE_VOLUNTEER_STATUS = gql`
-  mutation UpdateVolunteerStatus($id: String!, $availability: Boolean!, $latitude: String!, $longitude: String!) {
+  mutation UpdateVolunteerStatus($id: String!, $is_available: Boolean!, $latitude: Float!, $longitude: Float!) {
     update_volunteer_by_pk(
       pk_columns: { id: $id }
       _set: {
-        availability: $availability
+        is_available: $is_available
         latitude: $latitude
         longitude: $longitude
       }
     ) {
       id
-      availability
+      is_available
       latitude
       longitude
     }
   }
 `;
 
-<<<<<<< HEAD
 export const UPDATE_FOOD_QUALITY = gql`
   mutation UpdateFoodQuality($transaction_id: bigint!, $status: String!) {
     update_donar_transaction_by_pk(
@@ -190,7 +187,10 @@ export const UPDATE_FOOD_QUALITY = gql`
     ) {
       id
       status
-=======
+    }
+  }
+`;
+
 export const ADD_DONOR_FEEDBACK = gql`
   mutation AddDonorFeedback($transaction_id: bigint!, $feedback: String!) {
     update_donar_transaction_by_pk(
@@ -199,12 +199,11 @@ export const ADD_DONOR_FEEDBACK = gql`
     ) {
       id
       donar_feedback
->>>>>>> 39d101633cc9cbbdb6a7b1b3e86c5cbb2ca69c17
     }
   }
 `;
 
-// Query donations (no changes required)
+// Queries
 export const GET_DONOR_TRANSACTIONS = gql`
   query GetDonorTransactions($donor_id: bigint!) {
     donar_transaction(
@@ -228,12 +227,12 @@ export const GET_DONOR_TRANSACTIONS = gql`
         id
         name
         phone_number
-        latitude
-        longitude
+        current_location
       }
     }
   }
 `;
+
 export const GET_AVAILABLE_DONATIONS = gql`
   query GetAvailableDonations {
     donar_transaction(
@@ -273,7 +272,6 @@ export const GET_NGO_TRANSACTIONS = gql`
       expiry_date
       serving_quantity
       food_type
-      donar_feedback
       donar {
         id
         name
@@ -283,8 +281,8 @@ export const GET_NGO_TRANSACTIONS = gql`
         id
         name
         phone_number
-        latitude
-        longitude
+        current_latitude
+        current_longitude
       }
     }
   }
