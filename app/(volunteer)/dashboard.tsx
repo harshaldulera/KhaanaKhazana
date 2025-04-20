@@ -1,127 +1,162 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Switch } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, Switch, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import * as Location from 'expo-location';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, FontAwesome } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
+import { useQuery, useMutation } from '@apollo/client';
+import { GET_AVAILABLE_PICKUPS, ASSIGN_VOLUNTEER } from '../../graphql/mutations';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Linking } from 'react-native';
 
-// Mock data for available pickup requests
-const availablePickupRequests = [
-  {
-    id: '1',
-    foodType: 'Cooked Rice',
-    quantity: '50 plates',
-    pickupAddress: 'KJ Somaiya College of Engineering',
-    dropoffAddress: 'Haiko, RobinHood, Powai',
-    pickupTime: '2:00 PM',
-    expiryTime: '8:00 PM',
-    status: 'pending',
-    ngoName: 'The RobinHood',
-  },
-];
+interface Pickup {
+  id: string;
+  food_details: string;
+  pickup_location: string;
+  status: string;
+  created_at: string;
+  pickup_time: string;
+  expiry_date: string;
+  serving_quantity: number;
+  food_type: string;
+  donar: {
+    id: string;
+    name: string;
+    phone_number: string;
+    address: string;
+  };
+  ngo: {
+    id: string;
+    name: string;
+    phone_number: string;
+    address: string;
+  };
+}
 
 export default function VolunteerDashboard() {
-  const [pickupRequests, setPickupRequests] = useState<typeof availablePickupRequests>([]);
-  const [isLocationSharingEnabled, setIsLocationSharingEnabled] = useState(false);
-  const [locationPermission, setLocationPermission] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<{latitude: number, longitude: number} | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [location, setLocation] = useState<Location.LocationObjectCoords | null>(null);
   const [isActive, setIsActive] = useState(false);
-  const [showNewRequestAlert, setShowNewRequestAlert] = useState(false);
+  const [isLocationSharingEnabled, setIsLocationSharingEnabled] = useState(false);
 
   useEffect(() => {
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      setLocationPermission(status === 'granted');
-    })();
+    loadUserInfo();
+    requestLocationPermission();
   }, []);
 
-  useEffect(() => {
-    let locationSubscription: any = null;
-    let orderInterval: NodeJS.Timeout;
-    let initialOrderTimeout: NodeJS.Timeout;
-
-    if (isActive && locationPermission) {
-      // Start location updates
-      locationSubscription = Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 5000,
-          distanceInterval: 10,
-        },
-        (location) => {
-          const { latitude, longitude } = location.coords;
-          setCurrentLocation({ latitude, longitude });
-          
-          // TODO: Implement GraphQL mutation to update volunteer location
-          console.log('Location updated:', { latitude, longitude });
-        }
-      );
-
-      // Show first request after 5 seconds
-      initialOrderTimeout = setTimeout(() => {
-        setPickupRequests(prevRequests => {
-          const newRequest = availablePickupRequests[0];
-          setShowNewRequestAlert(true);
-          return [newRequest, ...prevRequests];
-        });
-
-        // Show second request after another 5 seconds
-      //   setTimeout(() => {
-      //     setPickupRequests(prevRequests => {
-      //       const newRequest = availablePickupRequests[1];
-      //       setShowNewRequestAlert(true);
-      //       return [newRequest, ...prevRequests];
-      //     });
-      //   }, 5000);
-      }, 5000);
-
-      // Simulate new orders appearing every 30 seconds
-      orderInterval = setInterval(() => {
-        const randomIndex = Math.floor(Math.random() * availablePickupRequests.length);
-        const newRequest = availablePickupRequests[randomIndex];
-        
-        setPickupRequests(prevRequests => {
-          // Check if request already exists
-          if (prevRequests.some(request => request.id === newRequest.id)) {
-            return prevRequests;
-          }
-          
-          setShowNewRequestAlert(true);
-          return [newRequest, ...prevRequests];
-        });
-      }, 30000);
+  const loadUserInfo = async () => {
+    try {
+      const userInfo = await AsyncStorage.getItem('userInfo');
+      if (userInfo) {
+        const parsedInfo = JSON.parse(userInfo);
+        setUserId(parsedInfo.id.toString());
+      }
+    } catch (error) {
+      console.error('Error loading user info:', error);
     }
+  };
 
-    return () => {
-      if (locationSubscription) {
-        locationSubscription.then((subscription: any) => subscription.remove());
+  const requestLocationPermission = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Denied', 'You need to grant location permission to use this feature');
+        return;
       }
-      if (orderInterval) {
-        clearInterval(orderInterval);
-      }
-      if (initialOrderTimeout) {
-        clearTimeout(initialOrderTimeout);
-      }
-    };
-  }, [isActive, locationPermission]);
 
-  useEffect(() => {
-    if (showNewRequestAlert) {
+      const currentLocation = await Location.getCurrentPositionAsync({});
+      setLocation(currentLocation.coords);
+    } catch (error) {
+      console.error('Error getting location:', error);
+    }
+  };
+
+  const { loading, error, data, refetch } = useQuery(GET_AVAILABLE_PICKUPS, {
+    fetchPolicy: 'network-only',
+    pollInterval: 30000,
+  });
+
+  const [assignVolunteer, { loading: assigning }] = useMutation(ASSIGN_VOLUNTEER, {
+    onCompleted: (data) => {
       Alert.alert(
-        'New Pickup Request Available!',
-        'A new pickup request has been added to your dashboard.',
+        'Success!', 
+        'You have been assigned to this pickup.',
         [
-          {
+          { 
             text: 'OK',
-            onPress: () => setShowNewRequestAlert(false)
+            onPress: () => refetch()
           }
         ]
       );
+    },
+    onError: (error) => {
+      Alert.alert('Error', error.message || 'There was an error accepting the pickup');
     }
-  }, [showNewRequestAlert]);
+  });
+
+  const acceptPickup = (transactionId: string) => {
+    if (!userId) {
+      Alert.alert('Error', 'You must be logged in to accept pickups');
+      return;
+    }
+
+    Alert.alert(
+      'Accept Pickup', 
+      'Are you sure you want to accept this pickup?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Accept', 
+          onPress: () => {
+            assignVolunteer({
+              variables: {
+                transaction_id: transactionId,
+                volunteer_id: userId
+              }
+            });
+          }
+        }
+      ]
+    );
+  };
+
+  const openMaps = (address: string) => {
+    const url = `https://maps.google.com/?q=${encodeURIComponent(address)}`;
+    Linking.openURL(url);
+  };
+
+  const calculateDistance = (pickup: Pickup) => {
+    if (!location || !pickup) return null;
+    
+    const lat1 = location.latitude;
+    const lon1 = location.longitude;
+    const lat2 = 19.0760; // Mock coordinates, would come from geocoding the address
+    const lon2 = 72.8777;
+    
+    const R = 6371;
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2); 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    const distance = R * c;
+    
+    return `${distance.toFixed(1)} km away`;
+  };
+
+  const deg2rad = (deg: number) => {
+    return deg * (Math.PI/180);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
+  };
 
   const toggleVolunteerStatus = () => {
-    if (!locationPermission) {
+    if (!location) {
       Alert.alert(
         'Location Permission Required',
         'Please enable location permissions to become active.',
@@ -131,7 +166,6 @@ export default function VolunteerDashboard() {
             text: 'Enable', 
             onPress: async () => {
               const { status } = await Location.requestForegroundPermissionsAsync();
-              setLocationPermission(status === 'granted');
               if (status === 'granted') {
                 setIsActive(true);
               }
@@ -142,207 +176,109 @@ export default function VolunteerDashboard() {
       return;
     }
     setIsActive(!isActive);
-    if (!isActive) {
-      // Clear any existing requests when becoming active
-      setPickupRequests([]);
-    } else {
-      // Clear requests when becoming inactive
-      setPickupRequests([]);
-    }
   };
 
-  const handleAcceptPickup = (requestId: string) => {
-    // TODO: Implement GraphQL mutation to accept pickup request
-    Alert.alert('Success', 'Pickup request accepted! Please proceed to pickup location.');
-    setPickupRequests(pickupRequests.map(request => 
-      request.id === requestId 
-        ? { ...request, status: 'accepted' }
-        : request
-    ));
-    // Enable location sharing when accepting pickup
-    setIsLocationSharingEnabled(true);
-  };
-
-  const handleFoodQualityCheck = (requestId: string, isApproved: boolean) => {
-    // TODO: Implement GraphQL mutation to update food quality status
-    Alert.alert(
-      'Food Quality Check',
-      isApproved 
-        ? 'Food quality approved! Proceed to dropoff.'
-        : 'Food quality not approved. Please contact the donor.',
-      [
-        {
-          text: 'OK',
-          onPress: () => {
-            setPickupRequests(pickupRequests.map(request => 
-              request.id === requestId 
-                ? { ...request, status: isApproved ? 'in_transit' : 'rejected' }
-                : request
-            ));
-          }
-        }
-      ]
-    );
-  };
-
-  const handleCompleteDelivery = (requestId: string) => {
-    // TODO: Implement GraphQL mutation to complete delivery
-    Alert.alert('Success', 'Delivery completed successfully!');
-    setPickupRequests(pickupRequests.map(request => 
-      request.id === requestId 
-        ? { ...request, status: 'completed' }
-        : request
-    ));
-  };
-
-  const toggleLocationSharing = () => {
-    if (!locationPermission) {
-      Alert.alert(
-        'Location Permission Required',
-        'Please enable location permissions to share your location.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Enable', 
-            onPress: async () => {
-              const { status } = await Location.requestForegroundPermissionsAsync();
-              setLocationPermission(status === 'granted');
-              if (status === 'granted') {
-                setIsLocationSharingEnabled(true);
-              }
-            }
-          }
-        ]
-      );
-      return;
-    }
-    setIsLocationSharingEnabled(!isLocationSharingEnabled);
-  };
-
-  const renderPickupRequest = ({ item }: { item: typeof availablePickupRequests[0] }) => (
-    <View style={styles.requestCard}>
-      <View style={styles.requestHeader}>
-        <Text style={styles.foodType}>{item.foodType}</Text>
-        <Text style={styles.quantity}>{item.quantity}</Text>
-      </View>
-      
-      <View style={styles.detailsContainer}>
-        <Text style={styles.ngoName}>NGO: {item.ngoName}</Text>
-        <Text style={styles.detailText}>📍 Pickup: {item.pickupAddress}</Text>
-        <Text style={styles.detailText}>🏢 Dropoff: {item.dropoffAddress}</Text>
-        <Text style={styles.detailText}>🕒 Pickup Time: {item.pickupTime}</Text>
-        <Text style={styles.detailText}>⏰ Expires: {item.expiryTime}</Text>
+  const renderItem = ({ item }: { item: Pickup }) => (
+    <View style={styles.pickupItem}>
+      <View style={styles.pickupHeader}>
+        <Text style={styles.pickupId}>#{item.id}</Text>
+        <View style={styles.statusBadge}>
+          <Text style={styles.statusBadgeText}>{item.status}</Text>
+        </View>
       </View>
 
-      {item.status === 'pending' && (
-        <TouchableOpacity 
-          style={styles.acceptButton}
-          onPress={() => handleAcceptPickup(item.id)}
-        >
-          <Text style={styles.acceptButtonText}>Accept Pickup</Text>
-        </TouchableOpacity>
-      )}
+      <Text style={styles.foodDetails}>{item.food_details}</Text>
       
-      {item.status === 'accepted' && (
-        <View>
-          <View style={styles.qualityCheckContainer}>
-            <Text style={styles.qualityCheckTitle}>Food Quality Check</Text>
-            <View style={styles.qualityCheckButtons}>
-              <TouchableOpacity 
-                style={[styles.qualityButton, styles.approveButton]}
-                onPress={() => handleFoodQualityCheck(item.id, true)}
-              >
-                <Text style={styles.qualityButtonText}>Approve</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.qualityButton, styles.rejectButton]}
-                onPress={() => handleFoodQualityCheck(item.id, false)}
-              >
-                <Text style={styles.qualityButtonText}>Reject</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          
-          {currentLocation && (
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => router.push({
-                pathname: '/(shared)/location-map',
-                params: {
-                  latitude: currentLocation?.latitude,
-                  longitude: currentLocation?.longitude,
-                  title: "Your Current Location",
-                  description: "This is your current position",
-                  destinationLatitude: 28.6139, // Example coordinates - replace with actual pickup location
-                  destinationLongitude: 77.2090,
-                  showRoute: "true",
-                  updateInterval: "5000"
-                }
-              })}
-            >
-              <Ionicons name="location" size={24} color="#007AFF" />
-              <Text style={styles.actionButtonText}>View Route</Text>
-            </TouchableOpacity>
+      <View style={styles.pickupInfoRow}>
+        <FontAwesome name="cutlery" size={16} color="#666" style={styles.infoIcon} />
+        <Text style={styles.infoText}>
+          {item.serving_quantity} servings ({item.food_type})
+        </Text>
+      </View>
+
+      <View style={styles.locationContainer}>
+        <View style={styles.locationHeader}>
+          <Text style={styles.locationTitle}>Pickup Location</Text>
+          {location && (
+            <Text style={styles.distanceBadge}>{calculateDistance(item)}</Text>
           )}
         </View>
-      )}
-      
-      {item.status === 'in_transit' && (
-        <View>
-          <View style={styles.locationSharingContainer}>
-            <Text style={styles.locationSharingText}>Share Location</Text>
-            <Switch
-              value={isLocationSharingEnabled}
-              onValueChange={toggleLocationSharing}
-              trackColor={{ false: '#767577', true: '#81b0ff' }}
-              thumbColor={isLocationSharingEnabled ? '#2196F3' : '#f4f3f4'}
-            />
-          </View>
-          
-          {currentLocation && (
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={() => router.push({
-                pathname: '/(shared)/location-map',
-                params: {
-                  latitude: currentLocation?.latitude,
-                  longitude: currentLocation?.longitude,
-                  title: "Your Current Location",
-                  description: "This is your current position",
-                  destinationLatitude: 28.6139, // Example coordinates - replace with actual dropoff location
-                  destinationLongitude: 77.2090,
-                  showRoute: "true",
-                  updateInterval: "5000"
-                }
-              })}
-            >
-              <Ionicons name="location" size={24} color="#007AFF" />
-              <Text style={styles.actionButtonText}>View Route</Text>
-            </TouchableOpacity>
-          )}
-          
+        
+        <View style={styles.pickupInfoRow}>
+          <FontAwesome name="map-marker" size={16} color="#666" style={styles.infoIcon} />
+          <Text style={styles.infoText}>{item.donar.address}</Text>
+        </View>
+        
+        <TouchableOpacity 
+          style={styles.directionsButton}
+          onPress={() => openMaps(item.donar.address)}
+        >
+          <FontAwesome name="location-arrow" size={16} color={Colors.light.tint} style={{ marginRight: 8 }} />
+          <Text style={styles.directionsButtonText}>Get Directions</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.locationContainer}>
+        <Text style={styles.locationTitle}>Delivery Location</Text>
+        <View style={styles.pickupInfoRow}>
+          <FontAwesome name="map-marker" size={16} color="#666" style={styles.infoIcon} />
+          <Text style={styles.infoText}>{item.ngo.address}</Text>
+        </View>
+        
+        <TouchableOpacity 
+          style={styles.directionsButton}
+          onPress={() => openMaps(item.ngo.address)}
+        >
+          <FontAwesome name="location-arrow" size={16} color={Colors.light.tint} style={{ marginRight: 8 }} />
+          <Text style={styles.directionsButtonText}>Get Directions</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.pickupInfoRow}>
+        <FontAwesome name="clock-o" size={16} color="#666" style={styles.infoIcon} />
+        <Text style={styles.infoText}>Pickup by: {formatDate(item.pickup_time)}</Text>
+      </View>
+
+      <View style={styles.contactsContainer}>
+        <View style={styles.contactCard}>
+          <Text style={styles.contactTitle}>Donor</Text>
+          <Text style={styles.contactName}>{item.donar.name}</Text>
           <TouchableOpacity 
-            style={styles.completeButton}
-            onPress={() => handleCompleteDelivery(item.id)}
+            style={styles.callButton}
+            onPress={() => Linking.openURL(`tel:${item.donar.phone_number}`)}
           >
-            <Text style={styles.completeButtonText}>Complete Delivery</Text>
+            <FontAwesome name="phone" size={14} color="#fff" style={{ marginRight: 4 }} />
+            <Text style={styles.callButtonText}>Call</Text>
           </TouchableOpacity>
         </View>
-      )}
-      
-      {item.status === 'completed' && (
-        <View style={styles.completedBadge}>
-          <Text style={styles.completedText}>Completed</Text>
+
+        <View style={styles.contactCard}>
+          <Text style={styles.contactTitle}>NGO</Text>
+          <Text style={styles.contactName}>{item.ngo.name}</Text>
+          <TouchableOpacity 
+            style={styles.callButton}
+            onPress={() => Linking.openURL(`tel:${item.ngo.phone_number}`)}
+          >
+            <FontAwesome name="phone" size={14} color="#fff" style={{ marginRight: 4 }} />
+            <Text style={styles.callButtonText}>Call</Text>
+          </TouchableOpacity>
         </View>
-      )}
-      
-      {item.status === 'rejected' && (
-        <View style={[styles.statusBadge, styles.rejectedBadge]}>
-          <Text style={styles.statusText}>Rejected</Text>
-        </View>
-      )}
+      </View>
+
+      <TouchableOpacity 
+        style={styles.acceptButton}
+        onPress={() => acceptPickup(item.id)}
+        disabled={assigning}
+      >
+        <FontAwesome name="check" size={16} color="#fff" style={{ marginRight: 8 }} />
+        <Text style={styles.acceptButtonText}>
+          {assigning ? 'Accepting...' : 'Accept Pickup'}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
+
+  const pickups = data?.donar_transaction || [];
 
   return (
     <View style={styles.container}>
@@ -355,29 +291,42 @@ export default function VolunteerDashboard() {
           thumbColor={isActive ? '#2196F3' : '#f4f3f4'}
         />
       </View>
-      <Text style={styles.title}>Available Pickup Requests</Text>
-      <FlatList
-        data={pickupRequests}
-        renderItem={renderPickupRequest}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContainer}
-      />
-      {currentLocation && (
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={() => router.push({
-            pathname: '/(shared)/location-map',
-            params: {
-              latitude: currentLocation?.latitude,
-              longitude: currentLocation?.longitude,
-              title: "Your Current Location",
-              description: "This is your current position"
-            }
-          })}
-        >
-          <Ionicons name="location" size={24} color="#007AFF" />
-          <Text style={styles.actionButtonText}>View Location</Text>
-        </TouchableOpacity>
+
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.light.tint} />
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Error loading pickups</Text>
+          <Text style={styles.errorSubtext}>{error.message}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      ) : pickups.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <FontAwesome name="inbox" size={64} color="#ccc" />
+          <Text style={styles.emptyTitle}>No Available Pickups</Text>
+          <Text style={styles.emptySubtitle}>
+            When new pickups are available, they will appear here
+          </Text>
+          <TouchableOpacity
+            style={styles.refreshButton}
+            onPress={() => refetch()}
+          >
+            <Text style={styles.refreshButtonText}>Refresh</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={pickups}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContainer}
+          refreshing={loading}
+          onRefresh={refetch}
+        />
       )}
     </View>
   );
@@ -386,8 +335,7 @@ export default function VolunteerDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f8f8',
   },
   statusContainer: {
     flexDirection: 'row',
@@ -408,154 +356,207 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    color: '#333',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
   },
-  listContainer: {
-    paddingBottom: 16,
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+    padding: 20,
   },
-  requestCard: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  requestHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  foodType: {
+  errorText: {
     fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  errorSubtext: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  retryButton: {
+    backgroundColor: Colors.light.tint,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  listContainer: {
+    padding: 16,
+  },
+  pickupItem: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  pickupHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  pickupId: {
+    fontSize: 16,
+    fontWeight: 'bold',
     color: '#333',
   },
-  quantity: {
-    fontSize: 16,
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 16,
+    backgroundColor: '#4CAF50',
+  },
+  statusBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  foodDetails: {
+    fontSize: 18,
+    fontWeight: '500',
+    marginBottom: 12,
+    color: '#333',
+  },
+  pickupInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  infoIcon: {
+    marginRight: 8,
+    width: 20,
+    textAlign: 'center',
+  },
+  infoText: {
+    fontSize: 14,
     color: '#666',
+    flex: 1,
   },
-  detailsContainer: {
-    marginBottom: 16,
+  locationContainer: {
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
   },
-  ngoName: {
+  locationHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  locationTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
     color: '#333',
     marginBottom: 8,
   },
-  detailText: {
+  distanceBadge: {
+    fontSize: 12,
+    color: Colors.light.tint,
+    fontWeight: '500',
+  },
+  directionsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  directionsButtonText: {
+    color: Colors.light.tint,
+    fontWeight: '500',
+  },
+  contactsContainer: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  contactCard: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+    padding: 12,
+    borderRadius: 8,
+    marginHorizontal: 4,
+    alignItems: 'center',
+  },
+  contactTitle: {
     fontSize: 14,
     color: '#666',
     marginBottom: 4,
   },
-  acceptButton: {
-    backgroundColor: Colors.light.tint,
-    padding: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  acceptButtonText: {
-    color: '#fff',
+  contactName: {
     fontSize: 16,
-    fontWeight: '600',
-  },
-  qualityCheckContainer: {
-    marginTop: 12,
-  },
-  qualityCheckTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
+    color: '#333',
     marginBottom: 8,
-    color: '#333',
+    textAlign: 'center',
   },
-  qualityCheckButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  qualityButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-    marginHorizontal: 4,
-  },
-  approveButton: {
-    backgroundColor: '#4CAF50',
-  },
-  rejectButton: {
-    backgroundColor: '#F44336',
-  },
-  qualityButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  locationSharingContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  locationSharingText: {
-    fontSize: 16,
-    color: '#333',
-  },
-  completeButton: {
-    backgroundColor: '#4CAF50',
-    padding: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  completeButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  completedBadge: {
-    backgroundColor: '#4CAF50',
-    padding: 8,
-    borderRadius: 4,
-    alignItems: 'center',
-  },
-  completedText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  statusBadge: {
-    padding: 8,
-    borderRadius: 4,
-    alignItems: 'center',
-  },
-  rejectedBadge: {
-    backgroundColor: '#F44336',
-  },
-  actionButton: {
+  callButton: {
+    backgroundColor: Colors.light.tint,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
-    padding: 12,
-    borderRadius: 6,
-    marginTop: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
   },
-  actionButtonText: {
-    marginLeft: 8,
+  callButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  acceptButton: {
+    backgroundColor: Colors.light.tint,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  acceptButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 20,
+    marginBottom: 10,
+  },
+  emptySubtitle: {
     fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 30,
+  },
+  refreshButton: {
+    backgroundColor: Colors.light.tint,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  refreshButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 }); 
