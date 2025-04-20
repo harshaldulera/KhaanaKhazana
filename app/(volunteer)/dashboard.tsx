@@ -271,7 +271,10 @@ export default function VolunteerDashboard() {
   };
 
   const renderItem = ({ item }: { item: Pickup }) => (
-    <View style={styles.pickupItem}>
+    <TouchableOpacity 
+      style={styles.pickupItem}
+      onPress={() => router.push(`/(volunteer)/pickup-details?id=${item.id}`)}
+    >
       <View style={styles.pickupHeader}>
         <Text style={styles.pickupId}>#{item.id}</Text>
         <View style={styles.statusBadge}>
@@ -357,17 +360,19 @@ export default function VolunteerDashboard() {
         </View>
       </View>
 
-      <TouchableOpacity 
-        style={styles.acceptButton}
-        onPress={() => acceptPickup(item.id)}
-        disabled={assigning}
-      >
-        <FontAwesome name="check" size={16} color="#fff" style={{ marginRight: 8 }} />
-        <Text style={styles.acceptButtonText}>
-          {assigning ? 'Accepting...' : 'Accept Pickup'}
-        </Text>
-      </TouchableOpacity>
-    </View>
+      {item.status === 'PENDING' && (
+        <TouchableOpacity 
+          style={styles.acceptButton}
+          onPress={() => acceptPickup(item.id)}
+          disabled={assigning}
+        >
+          <FontAwesome name="check" size={16} color="#fff" style={{ marginRight: 8 }} />
+          <Text style={styles.acceptButtonText}>
+            {assigning ? 'Accepting...' : 'Accept Pickup'}
+          </Text>
+        </TouchableOpacity>
+      )}
+    </TouchableOpacity>
   );
 
   const pickups = data?.donar_transaction || [];

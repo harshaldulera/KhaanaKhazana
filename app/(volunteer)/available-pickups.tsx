@@ -15,7 +15,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_AVAILABLE_PICKUPS, ASSIGN_VOLUNTEER } from '../../graphql/mutations';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Colors } from '@/constants/Colors';
+import { Colors } from '../../constants/Colors';
 import * as Location from 'expo-location';
 
 interface Pickup {
@@ -81,7 +81,6 @@ export default function AvailablePickupsScreen() {
     }
   };
 
-  // Fetch pending donations that have an NGO assigned but no volunteer
   const { loading, error, data, refetch } = useQuery(GET_AVAILABLE_PICKUPS, {
     fetchPolicy: 'network-only',
     pollInterval: 30000, // Poll every 30 seconds for updates
@@ -94,8 +93,11 @@ export default function AvailablePickupsScreen() {
         'You have been assigned to this pickup.',
         [
           { 
-            text: 'View Dashboard', 
-            onPress: () => router.push('/(volunteer)/dashboard')
+            text: 'View Details', 
+            onPress: () => router.push({
+              pathname: '/(volunteer)/pickup-details',
+              params: { id: data.update_donar_transaction_by_pk.id }
+            })
           }
         ]
       );
@@ -141,7 +143,6 @@ export default function AvailablePickupsScreen() {
     if (!location || !pickup) return null;
     
     // This is a simple distance calculation, for demo purposes
-    // A real app would use a more accurate method
     const lat1 = location.latitude;
     const lon1 = location.longitude;
     const lat2 = 19.0760; // Mock coordinates, would come from geocoding the address
@@ -265,6 +266,17 @@ export default function AvailablePickupsScreen() {
         <Text style={styles.acceptButtonText}>
           {assigning ? 'Accepting...' : 'Accept Pickup'}
         </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        onPress={() => router.push({
+          pathname: '/(volunteer)/pickup-details',
+          params: { id: item.id }
+        })}
+        style={styles.viewDetailsButton}
+      >
+        <Text style={styles.viewDetailsText}>View Details</Text>
+        <FontAwesome name="chevron-right" size={16} color="#fff" />
       </TouchableOpacity>
     </View>
   );
@@ -506,6 +518,20 @@ const styles = StyleSheet.create({
   acceptButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  viewDetailsButton: {
+    backgroundColor: Colors.light.tint,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  viewDetailsText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    marginRight: 8,
   },
   emptyContainer: {
     flex: 1,

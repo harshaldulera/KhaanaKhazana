@@ -180,6 +180,18 @@ export const UPDATE_VOLUNTEER_STATUS = gql`
   }
 `;
 
+export const UPDATE_FOOD_QUALITY = gql`
+  mutation UpdateFoodQuality($transaction_id: bigint!, $status: String!) {
+    update_donar_transaction_by_pk(
+      pk_columns: { id: $transaction_id }
+      _set: { status: $status }
+    ) {
+      id
+      status
+    }
+  }
+`;
+
 // Query donations (no changes required)
 export const GET_DONOR_TRANSACTIONS = gql`
   query GetDonorTransactions($donor_id: bigint!) {
@@ -268,15 +280,16 @@ export const GET_AVAILABLE_PICKUPS = gql`
   query GetAvailablePickups {
     donar_transaction(
       where: {
-        status: { _eq: "PENDING" }
-        ngo_id: { _is_null: false }
-        volunteer_id: { _is_null: true }
+        _and: [
+          { status: { _eq: "PENDING" } },
+          { ngo_id: { _is_null: false } },
+          { volunteer_id: { _is_null: true } }
+        ]
       }
       order_by: { created_at: desc }
     ) {
       id
       food_details
-      pickup_location
       status
       created_at
       pickup_time
@@ -300,14 +313,14 @@ export const GET_AVAILABLE_PICKUPS = gql`
 `;
 
 export const GET_VOLUNTEER_PICKUPS = gql`
-  query GetVolunteerPickups($volunteer_id: bigint!) {
+  query GetVolunteerPickups($id: bigint!) {
     donar_transaction(
-      where: { volunteer_id: { _eq: $volunteer_id } }
-      order_by: { created_at: desc }
+      where: { 
+        id: { _eq: $id }
+      }
     ) {
       id
       food_details
-      pickup_location
       status
       created_at
       pickup_time
@@ -326,6 +339,7 @@ export const GET_VOLUNTEER_PICKUPS = gql`
         phone_number
         address
       }
+      volunteer_id
     }
   }
 `;
