@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function VolunteerLayout() {
     return (
@@ -11,6 +11,9 @@ export default function VolunteerLayout() {
                     backgroundColor: '#fff',
                     borderTopWidth: 1,
                     borderTopColor: '#eee',
+                    height: 60,
+                    paddingBottom: 8,
+                    paddingTop: 8,
                 },
             }}
         >
@@ -20,6 +23,16 @@ export default function VolunteerLayout() {
                 title: 'Dashboard',
                 tabBarIcon: ({ color, size }) => (
                     <FontAwesome name="home" size={size} color={color} />
+                ),
+                headerShown: false,
+               }}
+            />
+            <Tabs.Screen 
+               name="rewards"
+               options={{
+                title: 'Rewards',
+                tabBarIcon: ({ color, size }) => (
+                    <MaterialCommunityIcons name="medal" size={size} color={color} />
                 ),
                 headerShown: false,
                }}
