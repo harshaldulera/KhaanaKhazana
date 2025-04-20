@@ -36,10 +36,9 @@ const cuisines = [
 
 
 const vehicleTypes = [
-  { label: "Two Wheeler", value: "two_wheeler" },
-  { label: "Three Wheeler", value: "three_wheeler" },
-  { label: "Four Wheeler", value: "four_wheeler" },
-  { label: "Mini Truck", value: "mini_truck" },
+  { label: "Cycle", value: "BICYCLE" }, 
+  { label: "Two Wheeler", value: "MOTORCYCLE" },
+  { label: "Four Wheeler", value: "CAR" },
 ];
 
 const RegisterScreen = () => {
@@ -381,6 +380,7 @@ const RegisterScreen = () => {
             placeholder="Select Vehicle Type"
             value={vehicleType}
             onChange={(item) => {
+              console.log('Selected Vehicle Type:', item.value);
               setVehicleType(item.value);
             }}
             renderLeftIcon={() => (
