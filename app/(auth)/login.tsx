@@ -18,20 +18,20 @@ const logo = require('@/assets/images/logo.png');
 
 type Role = 'donor' | 'ngo' | 'volunteer';
 
-const DUMMY_CREDENTIALS: Record<Role, { email: string; password: string }> = {
-  donor: {
-    email: "donor@test.com",
-    password: "test123"
-  },
-  ngo: {
-    email: "ngo@test.com",
-    password: "test123"
-  },
-  volunteer: {
-    email: "volunteer@test.com",
-    password: "test123"
-  }
-};
+// const DUMMY_CREDENTIALS: Record<Role, { email: string; password: string }> = {
+//   donor: {
+//     email: "donor@test.com",
+//     password: "test123"
+//   },
+//   ngo: {
+//     email: "ngo@test.com",
+//     password: "test123"
+//   },
+//   volunteer: {
+//     email: "volunteer@test.com",
+//     password: "test123"
+//   }
+// };
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -139,7 +139,7 @@ export default function LoginScreen() {
             <Text style={styles.roleText}>Volunteer</Text>
           </TouchableOpacity>
         </View>
-        <TouchableOpacity 
+        {/* <TouchableOpacity 
           style={styles.dummyButton}
           onPress={() => {
             setEmail(DUMMY_CREDENTIALS[role].email);
@@ -147,7 +147,7 @@ export default function LoginScreen() {
           }}
         >
           <Text style={styles.dummyButtonText}>Use Dummy Credentials</Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <View style={styles.form}>
           <TextInput
             style={styles.input}
