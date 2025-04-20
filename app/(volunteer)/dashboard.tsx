@@ -131,8 +131,8 @@ export default function VolunteerDashboard() {
               variables: {
                 id: userId,
                 is_available: isActive,
-                latitude: coords.latitude,
-                longitude: coords.longitude
+                latitude: String(coords.latitude),
+                longitude: String(coords.longitude)
               }
             });
           }

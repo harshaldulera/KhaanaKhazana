@@ -164,17 +164,17 @@ export const UPDATE_VOLUNTEER_LOCATION = gql`
 `;
 
 export const UPDATE_VOLUNTEER_STATUS = gql`
-  mutation UpdateVolunteerStatus($id: String!, $is_available: Boolean!, $latitude: Float!, $longitude: Float!) {
+  mutation UpdateVolunteerStatus($id: String!, $availability: Boolean!, $latitude: String!, $longitude: String!) {
     update_volunteer_by_pk(
       pk_columns: { id: $id }
       _set: {
-        is_available: $is_available
+        availability: $availability
         latitude: $latitude
         longitude: $longitude
       }
     ) {
       id
-      is_available
+      availability
       latitude
       longitude
     }
