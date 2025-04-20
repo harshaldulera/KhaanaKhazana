@@ -145,7 +145,6 @@ const RegisterScreen = () => {
                 phone_number: contactNumber,
                 vehicle_number: vehicleNumber,
                 vehicle_type: vehicleType,
-                current_location: address,
                 kyc_document: kycDocumentLink,
                 availability: null,
               },

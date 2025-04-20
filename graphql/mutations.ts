@@ -40,7 +40,8 @@ export const CREATE_VOLUNTEER = gql`
       phone_number
       vehicle_number
       vehicle_type
-      current_location
+      latitude
+      longitude
       kyc_document
       availability
     }
@@ -153,11 +154,11 @@ export const UPDATE_VOLUNTEER_LOCATION = gql`
   ) {
     update_volunteer_by_pk(
       pk_columns: { id: $volunteer_id }
-      _set: { current_latitude: $latitude, current_longitude: $longitude }
+      _set: { latitude: $latitude, longitude: $longitude }
     ) {
       id
-      current_latitude
-      current_longitude
+      latitude
+      longitude
     }
   }
 `;
@@ -176,6 +177,18 @@ export const UPDATE_VOLUNTEER_STATUS = gql`
       is_available
       latitude
       longitude
+    }
+  }
+`;
+
+export const ADD_DONOR_FEEDBACK = gql`
+  mutation AddDonorFeedback($transaction_id: bigint!, $feedback: String!) {
+    update_donar_transaction_by_pk(
+      pk_columns: { id: $transaction_id }
+      _set: { donar_feedback: $feedback }
+    ) {
+      id
+      donar_feedback
     }
   }
 `;
@@ -204,7 +217,8 @@ export const GET_DONOR_TRANSACTIONS = gql`
         id
         name
         phone_number
-        current_location
+        latitude
+        longitude
       }
     }
   }
@@ -248,6 +262,7 @@ export const GET_NGO_TRANSACTIONS = gql`
       expiry_date
       serving_quantity
       food_type
+      donar_feedback
       donar {
         id
         name
@@ -257,8 +272,8 @@ export const GET_NGO_TRANSACTIONS = gql`
         id
         name
         phone_number
-        current_latitude
-        current_longitude
+        latitude
+        longitude
       }
     }
   }

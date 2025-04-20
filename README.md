@@ -1,6 +1,37 @@
-# KhaanaKhazana Mobile App
+# KhaanaKhazana
 
-A React Native mobile application for KhaanaKhazana platform.
+A food donation management system to connect donors with NGOs and handle food donations efficiently.
+
+## Features
+
+- User authentication (Donor, NGO, Volunteer)
+- Food donation creation and management
+- NGO listing and assignment
+- Donation tracking with real-time location updates
+- Admin dashboard for monitoring and management
+
+## Recent Updates
+
+- Removed volunteer map from bottom tab navigation
+- Integrated tracking functionality directly into the donation history screen
+- Each donation in history now has a "Track Donation" button when the donation is trackable
+- Tracking screen shows donation status, location of volunteers, and delivery progress
+- Real-time location updates for donations in-progress
+
+## Tech Stack
+
+- React Native with Expo
+- GraphQL for API communication
+- Firebase for authentication
+- React Native Maps for location tracking
+- PostgreSQL database
+
+## Getting Started
+
+1. Clone the repository
+2. Run `npm install` to install dependencies
+3. Configure environment variables in `.env`
+4. Run `npm start` to start the Expo development server
 
 ## Project Structure
 
@@ -26,54 +57,6 @@ KhaanaKhazana/
 ├── config/             # Configuration files
 └── scripts/            # Build and utility scripts
 ```
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v18 or later)
-- npm or yarn
-- iOS: XCode (Mac only)
-- Android: Android Studio
-
-### Installation
-
-1. Clone the repository:
-
-   ```bash
-   git clone https://github.com/harshaldulera/KhaanaKhazana.git
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
-
-3. Start the development server:
-
-   ```bash
-   npm start
-   # or
-   yarn start
-   ```
-
-4. Run on iOS (Mac only):
-
-   ```bash
-   npm run ios
-   # or
-   yarn ios
-   ```
-
-5. Run on Android:
-   ```bash
-   npm run android
-   # or
-   yarn android
-   ```
 
 ## Development
 
