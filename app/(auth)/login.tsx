@@ -87,23 +87,23 @@ export default function LoginScreen() {
     }
     
     // Check if using dummy credentials
-    const isUsingDummyCredentials = Object.values(DUMMY_CREDENTIALS).some(
-      creds => creds.email === email && creds.password === password
-    );
+    // const isUsingDummyCredentials = Object.values(DUMMY_CREDENTIALS).some(
+    //   creds => creds.email === email && creds.password === password
+    // );
 
-    if (isUsingDummyCredentials) {
-      // Store dummy user info in AsyncStorage
-      AsyncStorage.setItem('userInfo', JSON.stringify({
-        id: 'dummy-id',
-        name: 'Test User',
-        email: email,
-        role: 'volunteer'
-      }));
+    // if (isUsingDummyCredentials) {
+    //   // Store dummy user info in AsyncStorage
+    //   AsyncStorage.setItem('userInfo', JSON.stringify({
+    //     id: 'dummy-id',
+    //     name: 'Test User',
+    //     email: email,
+    //     role: 'volunteer'
+    //   }));
       
-      // Navigate to volunteer dashboard
-      router.replace("/(volunteer)/dashboard");
-      return;
-    }
+    //   // Navigate to volunteer dashboard
+    //   router.replace("/(volunteer)/dashboard");
+    //   return;
+    // }
     
     loginUser({
       variables: {
