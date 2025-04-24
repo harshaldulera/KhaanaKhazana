@@ -203,6 +203,18 @@ export const ADD_DONOR_FEEDBACK = gql`
   }
 `;
 
+export const ADD_FEEDBACK = gql`
+  mutation AddFeedback($transaction_id: bigint!, $feedback: String!) {
+    update_donar_transaction_by_pk(
+      pk_columns: { id: $transaction_id }
+      _set: { feedback: $feedback }
+    ) {
+      id
+      feedback
+    }
+  }
+`;
+
 // Queries
 export const GET_DONOR_TRANSACTIONS = gql`
   query GetDonorTransactions($donor_id: bigint!) {
@@ -272,6 +284,7 @@ export const GET_NGO_TRANSACTIONS = gql`
       expiry_date
       serving_quantity
       food_type
+      feedback
       donar {
         id
         name
@@ -281,8 +294,6 @@ export const GET_NGO_TRANSACTIONS = gql`
         id
         name
         phone_number
-        current_latitude
-        current_longitude
       }
     }
   }

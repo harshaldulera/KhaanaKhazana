@@ -113,9 +113,10 @@ const mockHistoryData = {
 interface HistoryScreenProps {
   role?: string;
   transactions?: any[];
+  onAddFeedback?: (transaction: any) => void;
 }
 
-export default function HistoryScreen({ role: propRole, transactions }: HistoryScreenProps) {
+export default function HistoryScreen({ role: propRole, transactions, onAddFeedback }: HistoryScreenProps) {
   const params = useLocalSearchParams();
   const router = useRouter();
   const role = propRole || params.role as string || 'donor';
@@ -123,22 +124,10 @@ export default function HistoryScreen({ role: propRole, transactions }: HistoryS
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [feedbackText, setFeedbackText] = useState('');
   const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
   
   // If real transactions are provided, use them; otherwise use mock data
   const historyData = transactions || mockHistoryData[role as keyof typeof mockHistoryData] || [];
-
-  // Mutation for adding donor feedback
-  const [addFeedback, { loading: submittingFeedback }] = useMutation(ADD_DONOR_FEEDBACK, {
-    onCompleted: () => {
-      setFeedbackModalVisible(false);
-      setSelectedTransaction(null);
-      setFeedbackText('');
-      alert('Feedback submitted successfully!');
-    },
-    onError: (error) => {
-      alert(`Error submitting feedback: ${error.message}`);
-    }
-  });
 
   const handleTrackDonation = (donationId: string) => {
     router.push(`/(donor)/tracking?donationId=${donationId}`);
@@ -156,12 +145,23 @@ export default function HistoryScreen({ role: propRole, transactions }: HistoryS
       return;
     }
 
-    addFeedback({
-      variables: {
-        transaction_id: selectedTransaction.id,
+    setSubmittingFeedback(true);
+    if (onAddFeedback) {
+      onAddFeedback({
+        ...selectedTransaction,
         feedback: feedbackText.trim()
-      }
-    });
+      });
+      setFeedbackModalVisible(false);
+      setSelectedTransaction(null);
+      setFeedbackText('');
+      setSubmittingFeedback(false);
+    }
+  };
+
+  const closeFeedbackModal = () => {
+    setFeedbackModalVisible(false);
+    setSelectedTransaction(null);
+    setFeedbackText('');
   };
 
   // Format date helper
@@ -232,33 +232,39 @@ export default function HistoryScreen({ role: propRole, transactions }: HistoryS
     if (!transactionData) return null;
 
     return (
-      <View style={styles.historyCard}>
+      <TouchableOpacity 
+        style={styles.historyCard}
+        onPress={() => handleAddFeedback(item)}
+      >
         <View style={styles.header}>
-          <Text style={styles.foodType}>{transactionData.foodType}</Text>
-          <Text style={styles.quantity}>{transactionData.quantity}</Text>
+          <View>
+            <Text style={styles.foodType}>{transactionData.foodType}</Text>
+            <Text style={styles.quantity}>{transactionData.quantity}</Text>
+          </View>
+          {role === 'ngo' && (
+            <TouchableOpacity 
+              style={styles.feedbackButton}
+              onPress={() => handleAddFeedback(item)}
+            >
+              <FontAwesome name="comment" size={14} color="#fff" />
+              <Text style={styles.feedbackButtonText}>
+                {transactionData.feedback ? 'Edit Feedback' : 'Add Feedback'}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.detailsContainer}>
-          {role === 'donor' && (
-            <>
-              <Text style={styles.detailText}>NGO: {transactionData.ngoName}</Text>
-              <Text style={styles.detailText}>Volunteer: {transactionData.volunteerName}</Text>
-            </>
-          )}
-          
           {role === 'ngo' && (
             <>
               <Text style={styles.detailText}>Donor: {transactionData.donorName}</Text>
               <Text style={styles.detailText}>Phone: {transactionData.donorPhone}</Text>
-              <Text style={styles.detailText}>Volunteer: {transactionData.volunteerName}</Text>
-              <Text style={styles.detailText}>Phone: {transactionData.volunteerPhone}</Text>
-            </>
-          )}
-          
-          {role === 'volunteer' && (
-            <>
-              <Text style={styles.detailText}>Donor: {transactionData.donorName}</Text>
-              <Text style={styles.detailText}>NGO: {transactionData.ngoName}</Text>
+              {transactionData.volunteerName !== 'Not assigned yet' && (
+                <>
+                  <Text style={styles.detailText}>Volunteer: {transactionData.volunteerName}</Text>
+                  <Text style={styles.detailText}>Phone: {transactionData.volunteerPhone}</Text>
+                </>
+              )}
             </>
           )}
 
@@ -274,7 +280,7 @@ export default function HistoryScreen({ role: propRole, transactions }: HistoryS
           
           {transactionData.feedback && (
             <View style={styles.feedbackContainer}>
-              <Text style={styles.feedbackLabel}>Donor Feedback:</Text>
+              <Text style={styles.feedbackLabel}>Your Feedback:</Text>
               <Text style={styles.feedbackText}>{transactionData.feedback}</Text>
             </View>
           )}
@@ -295,30 +301,8 @@ export default function HistoryScreen({ role: propRole, transactions }: HistoryS
               {transactionData.status.toUpperCase()}
             </Text>
           </View>
-          
-          <View style={styles.actionButtons}>
-            {role === 'donor' && (
-              <TouchableOpacity 
-                style={styles.trackButton}
-                onPress={() => handleTrackDonation(transactionData.id)}
-              >
-                <FontAwesome name="map-marker" size={14} color="#fff" />
-                <Text style={styles.trackButtonText}>Track</Text>
-              </TouchableOpacity>
-            )}
-
-            {role === 'ngo' && transactionData.status === 'completed' && !transactionData.feedback && (
-              <TouchableOpacity 
-                style={styles.feedbackButton}
-                onPress={() => handleAddFeedback(item)}
-              >
-                <FontAwesome name="comment" size={14} color="#fff" />
-                <Text style={styles.feedbackButtonText}>Add Feedback</Text>
-              </TouchableOpacity>
-            )}
-          </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -348,11 +332,11 @@ export default function HistoryScreen({ role: propRole, transactions }: HistoryS
         animationType="slide"
         transparent={true}
         visible={feedbackModalVisible}
-        onRequestClose={() => setFeedbackModalVisible(false)}
+        onRequestClose={closeFeedbackModal}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add Donor Feedback</Text>
+            <Text style={styles.modalTitle}>Add Feedback</Text>
             
             <TextInput
               style={styles.feedbackInput}
@@ -365,7 +349,7 @@ export default function HistoryScreen({ role: propRole, transactions }: HistoryS
             <View style={styles.modalButtons}>
               <TouchableOpacity 
                 style={[styles.modalButton, styles.cancelButton]}
-                onPress={() => setFeedbackModalVisible(false)}
+                onPress={closeFeedbackModal}
               >
                 <Text style={styles.modalButtonText}>Cancel</Text>
               </TouchableOpacity>
@@ -491,7 +475,7 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   feedbackButton: {
-    backgroundColor: '#007BFF',
+    backgroundColor: Colors.light.tint,
     padding: 8,
     borderRadius: 6,
     flexDirection: 'row',
@@ -573,3 +557,4 @@ const styles = StyleSheet.create({
     color: '#333',
   },
 }); 
+
