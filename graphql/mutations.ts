@@ -40,7 +40,8 @@ export const CREATE_VOLUNTEER = gql`
       phone_number
       vehicle_number
       vehicle_type
-      current_location
+      latitude
+      longitude
       kyc_document
       availability
     }
@@ -152,22 +153,22 @@ export const UPDATE_VOLUNTEER_LOCATION = gql`
   ) {
     update_volunteer_by_pk(
       pk_columns: { id: $volunteer_id }
-      _set: { current_latitude: $latitude, current_longitude: $longitude }
+      _set: { latitude: $latitude, longitude: $longitude }
     ) {
       id
-      current_latitude
-      current_longitude
+      latitude
+      longitude
     }
   }
 `;
 
 export const UPDATE_VOLUNTEER_STATUS = gql`
-  mutation UpdateVolunteerStatus($id: String!, $is_available: Boolean!, $latitude: Float!, $longitude: Float!) {
+  mutation UpdateVolunteerStatus($id: bigint!, $is_available: Boolean!, $latitude: Float!, $longitude: Float!) {
     update_volunteer_by_pk(
       pk_columns: { id: $id }
       _set: {
-        is_available: $is_available
-        latitude: $latitude
+        is_available: $is_available,
+        latitude: $latitude,
         longitude: $longitude
       }
     ) {
@@ -233,13 +234,17 @@ export const GET_DONOR_TRANSACTIONS = gql`
       ngo {
         id
         name
+        poc_name
         poc_phone_number
       }
       volunteer {
         id
         name
         phone_number
-        current_location
+        vehicle_number
+        vehicle_type
+        latitude
+        longitude
       }
     }
   }
@@ -294,6 +299,10 @@ export const GET_NGO_TRANSACTIONS = gql`
         id
         name
         phone_number
+        vehicle_number
+        vehicle_type
+        latitude
+        longitude
       }
     }
   }

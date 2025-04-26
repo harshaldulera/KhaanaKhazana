@@ -1,19 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert
-} from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { FontAwesome } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import { View, Text, ActivityIndicator, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery } from '@apollo/client';
 import { GET_DONOR_TRANSACTIONS } from '../../graphql/mutations';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors } from '@/constants/Colors';
+import { FontAwesome } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 interface Transaction {
   id: string;
@@ -22,26 +14,27 @@ interface Transaction {
   status: string;
   created_at: string;
   pickup_time: string;
-  expiry_date: string;
   serving_quantity: number;
   food_type: string;
   ngo?: {
     id: string;
     name: string;
-    phone_number: string;
+    poc_phone_number: string;
   };
   volunteer?: {
     id: string;
     name: string;
     phone_number: string;
-    current_latitude?: number;
-    current_longitude?: number;
+    vehicle_type: string;
+    vehicle_number: string;
+    latitude?: number;
+    longitude?: number;
   };
 }
 
-export default function HistoryScreen() {
+export default function DonorHistoryScreen() {
+  const [userId, setUserId] = useState<number | null>(null);
   const router = useRouter();
-  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     loadUserInfo();
@@ -52,10 +45,7 @@ export default function HistoryScreen() {
       const userInfo = await AsyncStorage.getItem('userInfo');
       if (userInfo) {
         const parsedInfo = JSON.parse(userInfo);
-        setUserId(parsedInfo.id.toString());
-      } else {
-        Alert.alert('Error', 'Please log in to view history');
-        router.replace('/(auth)/login');
+        setUserId(parsedInfo.id);
       }
     } catch (error) {
       console.error('Error loading user info:', error);
@@ -68,119 +58,71 @@ export default function HistoryScreen() {
     fetchPolicy: 'network-only',
   });
 
-  useEffect(() => {
-    // Manually refresh when the screen comes into focus
-    if (userId) {
-      refetch();
-    }
-  }, [userId, refetch]);
-
-  const getStatusColor = (status: string): string => {
-    switch (status) {
-      case 'PENDING':
-        return '#F5A623';
-      case 'ACCEPTED':
-        return '#4CAF50';
-      case 'IN_TRANSIT':
-        return '#2196F3';
-      case 'DELIVERED':
-        return '#8BC34A';
-      case 'COMPLETED':
-        return '#4CAF50';
-      case 'CANCELLED':
-        return '#F44336';
-      default:
-        return '#757575';
-    }
+  const handleTrackDonation = (donationId: string) => {
+    router.push(`/(donor)/tracking?donationId=${donationId}`);
   };
 
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`;
-  };
-
-  // Check if a donation is trackable (has NGO or volunteer assigned and isn't completed or cancelled)
-  const isTrackable = (item: Transaction): boolean => {
+  const isTrackable = (item: Transaction) => {
+    // Check if donation can be tracked (has NGO assigned and volunteer with location)
     if (item.status === 'CANCELLED') return false;
-    return !!(item.ngo || (item.volunteer && item.volunteer.current_latitude));
+    return item.status === 'ACCEPTED' || item.status === 'IN_TRANSIT';
   };
 
-  const renderItem = ({ item }: { item: Transaction }) => (
-    <TouchableOpacity 
-      style={styles.donationItem}
-      onPress={() => {
-        if (isTrackable(item)) {
-          router.push({
-            pathname: "/(donor)/tracking",
-            params: { donationId: item.id }
-          });
-        }
-      }}
-    >
-      <View style={styles.donationHeader}>
-        <Text style={styles.donationId}>#{item.id}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Text style={styles.statusText}>{item.status}</Text>
-        </View>
-      </View>
-
-      <Text style={styles.foodDetails}>{item.food_details}</Text>
-      
-      <View style={styles.donationInfoRow}>
-        <FontAwesome name="cutlery" size={16} color="#666" style={styles.infoIcon} />
-        <Text style={styles.infoText}>
-          {item.serving_quantity} servings ({item.food_type})
-        </Text>
-      </View>
-
-      <View style={styles.donationInfoRow}>
-        <FontAwesome name="map-marker" size={16} color="#666" style={styles.infoIcon} />
-        <Text style={styles.infoText}>{item.pickup_location}</Text>
-      </View>
-
-      <View style={styles.donationInfoRow}>
-        <FontAwesome name="clock-o" size={16} color="#666" style={styles.infoIcon} />
-        <Text style={styles.infoText}>Pickup: {formatDate(item.pickup_time)}</Text>
-      </View>
-
-      {item.ngo && (
-        <View style={[styles.donationInfoRow, styles.assignedInfo]}>
-          <FontAwesome name="building" size={16} color="#4CAF50" style={styles.infoIcon} />
-          <Text style={[styles.infoText, styles.assignedText]}>
-            Assigned to: {item.ngo.name}
-          </Text>
-        </View>
-      )}
-
-      {isTrackable(item) && (
-        <TouchableOpacity 
-          style={styles.trackButton}
-          onPress={() => {
-            router.push({
-              pathname: "/(donor)/tracking",
-              params: { donationId: item.id }
-            });
-          }}
-        >
-          <FontAwesome name="map" size={16} color="#fff" style={{ marginRight: 8 }} />
-          <Text style={styles.trackButtonText}>Track Donation</Text>
-        </TouchableOpacity>
-      )}
-    </TouchableOpacity>
-  );
-
-  if (!userId) {
+  const renderTransactionItem = ({ item }: { item: Transaction }) => {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.light.tint} />
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.foodType}>{item.food_details}</Text>
+          <Text style={styles.quantity}>{item.serving_quantity} servings ({item.food_type})</Text>
+        </View>
+        
+        <View style={styles.cardBody}>
+          <Text style={styles.detailText}>NGO: {item.ngo?.name || 'Not assigned yet'}</Text>
+          {item.ngo?.poc_phone_number && (
+            <Text style={styles.detailText}>NGO Phone: {item.ngo.poc_phone_number}</Text>
+          )}
+          {item.volunteer && (
+            <>
+              <Text style={styles.detailText}>Volunteer: {item.volunteer.name}</Text>
+              <Text style={styles.detailText}>Phone: {item.volunteer.phone_number}</Text>
+              <Text style={styles.detailText}>Vehicle: {item.volunteer.vehicle_type} ({item.volunteer.vehicle_number})</Text>
+            </>
+          )}
+          <Text style={styles.detailText}>📍 Pickup: {item.pickup_location}</Text>
+          <Text style={styles.detailText}>🕒 Pickup Time: {new Date(item.pickup_time).toLocaleString()}</Text>
+          
+          <View style={[
+            styles.statusBadge,
+            {
+              backgroundColor: 
+                item.status === 'COMPLETED' ? '#4CAF50' :
+                item.status === 'CANCELLED' ? '#F44336' :
+                item.status === 'ACCEPTED' ? '#2196F3' :
+                '#FF9800'
+            }
+          ]}>
+            <Text style={styles.statusText}>{item.status}</Text>
+          </View>
+
+          {isTrackable(item) && (
+            <TouchableOpacity 
+              style={styles.trackButton}
+              onPress={() => handleTrackDonation(item.id)}
+            >
+              <FontAwesome name="map-marker" size={16} color="#fff" />
+              <Text style={styles.trackButtonText}>Track Donation</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     );
-  }
+  };
 
-  if (loading) {
+  if (!userId || loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.light.tint} />
+        <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
   }
@@ -189,7 +131,6 @@ export default function HistoryScreen() {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>Error loading donations</Text>
-        <Text style={styles.errorSubtext}>{error.message}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
           <Text style={styles.retryButtonText}>Try Again</Text>
         </TouchableOpacity>
@@ -197,41 +138,21 @@ export default function HistoryScreen() {
     );
   }
 
-  const transactions = data?.donar_transaction || [];
-
   return (
     <View style={styles.container}>
-      <Stack.Screen
-        options={{
-          title: 'Donation History',
-          headerShown: true,
-        }}
+      <Text style={styles.title}>Donation History</Text>
+      
+      <FlatList
+        data={data?.donar_transaction || []}
+        renderItem={renderTransactionItem}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={styles.listContainer}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No donations found</Text>
+          </View>
+        }
       />
-
-      {transactions.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <FontAwesome name="inbox" size={64} color="#ccc" />
-          <Text style={styles.emptyTitle}>No Donations Yet</Text>
-          <Text style={styles.emptySubtitle}>
-            When you donate food, your donations will appear here
-          </Text>
-          <TouchableOpacity
-            style={styles.donateButton}
-            onPress={() => router.push("/(donor)/donate")}
-          >
-            <Text style={styles.donateButtonText}>Donate Now</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <FlatList
-          data={transactions}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContainer}
-          refreshing={loading}
-          onRefresh={refetch}
-        />
-      )}
     </View>
   );
 }
@@ -239,105 +160,60 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f8f8',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f8f8',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f8f8',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  errorSubtext: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  retryButton: {
-    backgroundColor: Colors.light.tint,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  listContainer: {
+    backgroundColor: '#fff',
     padding: 16,
   },
-  donationItem: {
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: Colors.light.tint,
+  },
+  listContainer: {
+    flexGrow: 1,
+  },
+  card: {
     backgroundColor: '#fff',
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  donationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  cardHeader: {
     marginBottom: 12,
   },
-  donationId: {
-    fontSize: 16,
+  foodType: {
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#333',
   },
+  quantity: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 4,
+  },
+  cardBody: {
+    gap: 8,
+  },
+  detailText: {
+    fontSize: 14,
+    color: '#666',
+  },
   statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 16,
+    marginTop: 8,
   },
   statusText: {
     color: '#fff',
-    fontSize: 12,
     fontWeight: 'bold',
-  },
-  foodDetails: {
-    fontSize: 18,
-    fontWeight: '500',
-    marginBottom: 12,
-    color: '#333',
-  },
-  donationInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  infoIcon: {
-    marginRight: 8,
-    width: 20,
-    textAlign: 'center',
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#666',
-    flex: 1,
-  },
-  assignedInfo: {
-    backgroundColor: '#F1F8E9',
-    padding: 8,
-    borderRadius: 8,
-  },
-  assignedText: {
-    color: '#2E7D32',
+    fontSize: 12,
   },
   trackButton: {
     backgroundColor: Colors.light.tint,
@@ -351,34 +227,46 @@ const styles = StyleSheet.create({
   trackButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+    marginLeft: 8,
   },
-  emptyContainer: {
+  loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
   },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginTop: 20,
-    marginBottom: 10,
-  },
-  emptySubtitle: {
+  loadingText: {
+    marginTop: 12,
     fontSize: 16,
     color: '#666',
-    textAlign: 'center',
-    marginBottom: 30,
   },
-  donateButton: {
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#f44336',
+    marginBottom: 12,
+  },
+  retryButton: {
     backgroundColor: Colors.light.tint,
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 8,
   },
-  donateButtonText: {
+  retryButtonText: {
     color: '#fff',
     fontWeight: 'bold',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  emptyText: {
     fontSize: 16,
+    color: '#666',
   },
 });

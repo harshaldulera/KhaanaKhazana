@@ -79,6 +79,13 @@ export default function NGOHistoryScreen() {
         <View style={styles.cardBody}>
           <Text style={styles.detailText}>Donor: {item.donar?.name || 'Unknown'}</Text>
           <Text style={styles.detailText}>Phone: {item.donar?.phone_number || 'N/A'}</Text>
+          {item.volunteer && (
+            <>
+              <Text style={styles.detailText}>Volunteer: {item.volunteer.name}</Text>
+              <Text style={styles.detailText}>Phone: {item.volunteer.phone_number}</Text>
+              <Text style={styles.detailText}>Vehicle: {item.volunteer.vehicle_type} ({item.volunteer.vehicle_number})</Text>
+            </>
+          )}
           <Text style={styles.detailText}>Pickup: {item.pickup_location}</Text>
           <Text style={styles.detailText}>Pickup Time: {new Date(item.pickup_time).toLocaleString()}</Text>
           
