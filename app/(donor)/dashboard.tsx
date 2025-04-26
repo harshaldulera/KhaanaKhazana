@@ -1,64 +1,72 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Image, StatusBar } from 'react-native';
-import { Stack, router } from 'expo-router';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  Image,
+  StatusBar,
+} from "react-native";
+import { Stack, router } from "expo-router";
 import { Colors } from "../../constants/Colors";
 import CarouselCards from "@/components/carouselcards";
-import {  FontAwesome5 } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { FontAwesome5 } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Donation options data
 const donationOptions = [
   {
-    id: 'food',
-    title: 'Donate Food',
-    icon: 'utensils',
-    description: 'Share excess food from events or restaurants',
-    route: '/(donor)/donate' as const,
-    color: '#FF6B6B'
+    id: "food",
+    title: "Donate Food",
+    icon: "utensils",
+    description: "Share excess food from events or restaurants",
+    route: "/(donor)/donate" as const,
+    color: "#FF6B6B",
   },
   {
-    id: 'grocery',
-    title: 'Donate Grocery',
-    icon: 'shopping-basket',
-    description: 'Contribute essential grocery items',
-    route: '/(donor)/donate' as const,
-    color: '#4ECDC4'
+    id: "grocery",
+    title: "Donate Grocery",
+    icon: "shopping-basket",
+    description: "Contribute essential grocery items",
+    route: "/(donor)/donate" as const,
+    color: "#4ECDC4",
   },
   {
-    id: 'money',
-    title: 'Donate Money',
-    icon: 'hand-holding-heart',
-    description: 'Support food distribution programs',
-    route: '/(donor)/donate' as const,
-    color: '#FF9F1C'
-  }
+    id: "money",
+    title: "Donate Money",
+    icon: "hand-holding-heart",
+    description: "Support food distribution programs",
+    route: "/(donor)/donate" as const,
+    color: "#FF9F1C",
+  },
 ];
 
 // Recent NGOs data
 const recentNGOs = [
   {
-    id: '1',
-    name: 'The RobinHood',
-    image: require('../../assets/images/robinhood.jpg'),
-    route: '/(donor)/ngolist' as const
+    id: "1",
+    name: "The RobinHood",
+    image: require("../../assets/images/robinhood.jpg"),
+    route: "/(donor)/ngolist" as const,
   },
   {
-    id: '2',
-    name: 'Humana',
-    image: require('../../assets/images/humana.jpg'),
-    route: '/(donor)/ngolist' as const
+    id: "2",
+    name: "Humana",
+    image: require("../../assets/images/humana.jpg"),
+    route: "/(donor)/ngolist" as const,
   },
   {
-    id: '3',
-    name: 'Seva Foundation',
-    image: require('../../assets/images/logo.png'),
-    route: '/(donor)/ngolist' as const
-  }
+    id: "3",
+    name: "Seva Foundation",
+    image: require("../../assets/images/logo.png"),
+    route: "/(donor)/ngolist" as const,
+  },
 ];
 
 export default function DonorDashboard() {
-  const [userName, setUserName] = useState('Donor');
+  const [userName, setUserName] = useState("Donor");
 
   useEffect(() => {
     loadUserInfo();
@@ -66,23 +74,25 @@ export default function DonorDashboard() {
 
   const loadUserInfo = async () => {
     try {
-      const userInfo = await AsyncStorage.getItem('userInfo');
+      const userInfo = await AsyncStorage.getItem("userInfo");
       if (userInfo) {
         const parsedInfo = JSON.parse(userInfo);
         if (parsedInfo.name) {
-          setUserName(parsedInfo.name.split(' ')[0]);
+          setUserName(parsedInfo.name.split(" ")[0]);
         }
       }
     } catch (error) {
-      console.error('Error loading user info:', error);
+      console.error("Error loading user info:", error);
     }
   };
 
-  const handleDonationPress = (route: typeof donationOptions[number]['route']) => {
+  const handleDonationPress = (
+    route: (typeof donationOptions)[number]["route"]
+  ) => {
     router.push(route);
   };
 
-  const handleNGOPress = (route: typeof recentNGOs[number]['route']) => {
+  const handleNGOPress = (route: (typeof recentNGOs)[number]["route"]) => {
     router.push(route);
   };
 
@@ -92,17 +102,17 @@ export default function DonorDashboard() {
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
         <Stack.Screen
           options={{
-            title: 'Donor Dashboard',
+            title: "Donor Dashboard",
             headerShown: false,
           }}
         />
-        
+
         {/* Welcome Header */}
         <View style={styles.header}>
           <View style={styles.headerContent}>
             <Text style={styles.greeting}>Hello, {userName}!</Text>
-            <Text style={styles.welcomeText}>Welcome to KhaanaKhazana</Text>
-            
+            <Text style={styles.welcomeText}>Welcome to ShareBite</Text>
+
             <View style={styles.statsRow}>
               <View style={styles.statCard}>
                 <View style={styles.statIconContainer}>
@@ -113,9 +123,14 @@ export default function DonorDashboard() {
                   <Text style={styles.statLabel}>Meals Donated</Text>
                 </View>
               </View>
-              
+
               <View style={styles.statCard}>
-                <View style={[styles.statIconContainer, { backgroundColor: '#FF9F1C' }]}>
+                <View
+                  style={[
+                    styles.statIconContainer,
+                    { backgroundColor: "#FF9F1C" },
+                  ]}
+                >
                   <FontAwesome5 name="heart" size={18} color="#fff" />
                 </View>
                 <View>
@@ -126,13 +141,13 @@ export default function DonorDashboard() {
             </View>
           </View>
         </View>
-        
+
         {/* Quick Actions */}
         <View style={styles.quickActionsContainer}>
           <Text style={styles.sectionTitle}>Make a Difference Today</Text>
           <View style={styles.quickActions}>
             {donationOptions.map((option) => (
-              <TouchableOpacity 
+              <TouchableOpacity
                 key={option.id}
                 style={[styles.actionButton, { backgroundColor: option.color }]}
                 onPress={() => handleDonationPress(option.route)}
@@ -145,23 +160,27 @@ export default function DonorDashboard() {
             ))}
           </View>
         </View>
-        
+
         {/* Carousel Section */}
         <View style={styles.carouselSection}>
           <Text style={styles.sectionTitle}>Current Initiatives</Text>
           <CarouselCards />
         </View>
-        
+
         {/* NGO Section */}
         <View style={styles.ngoSection}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Featured NGOs</Text>
-            <TouchableOpacity onPress={() => router.push('/(donor)/ngolist')}>
+            <TouchableOpacity onPress={() => router.push("/(donor)/ngolist")}>
               <Text style={styles.viewAllText}>View All</Text>
             </TouchableOpacity>
           </View>
-          
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.ngoScrollView}>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.ngoScrollView}
+          >
             {recentNGOs.map((ngo) => (
               <TouchableOpacity
                 key={ngo.id}
@@ -177,9 +196,15 @@ export default function DonorDashboard() {
 
         {/* Impact Message */}
         <View style={styles.impactMessage}>
-          <FontAwesome5 name="quote-left" size={20} color="#FF6B6B" style={styles.quoteIcon} />
+          <FontAwesome5
+            name="quote-left"
+            size={20}
+            color="#FF6B6B"
+            style={styles.quoteIcon}
+          />
           <Text style={styles.impactMessageText}>
-            Every donation counts. Your generosity can bring a smile to someone's face today.
+            Every donation counts. Your generosity can bring a smile to
+            someone's face today.
           </Text>
         </View>
       </ScrollView>
@@ -194,7 +219,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#f6f6f6',
+    backgroundColor: "#f6f6f6",
   },
   header: {
     backgroundColor: Colors.light.tint,
@@ -208,54 +233,54 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontSize: 18,
-    fontWeight: '500',
-    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: "500",
+    color: "rgba(255, 255, 255, 0.9)",
     marginBottom: 4,
   },
   welcomeText: {
     fontSize: 26,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
     marginBottom: 20,
   },
   statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   statCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     borderRadius: 12,
     padding: 12,
-    width: '48%',
+    width: "48%",
   },
   statIconContainer: {
-    backgroundColor: '#4ECDC4',
+    backgroundColor: "#4ECDC4",
     width: 36,
     height: 36,
     borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 12,
   },
   statValue: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
   },
   statLabel: {
     fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.9)',
+    color: "rgba(255, 255, 255, 0.9)",
   },
   quickActionsContainer: {
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     marginTop: 20,
     marginBottom: 20,
     marginHorizontal: 15,
     borderRadius: 15,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 3,
@@ -266,48 +291,48 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: "600",
+    color: "#333",
     marginBottom: 15,
   },
   quickActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   actionButton: {
-    width: '31%',
+    width: "31%",
     borderRadius: 12,
     padding: 12,
-    alignItems: 'center',
+    alignItems: "center",
   },
   actionIconContainer: {
     width: 45,
     height: 45,
     borderRadius: 22.5,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 8,
   },
   actionTitle: {
     fontSize: 13,
-    fontWeight: '500',
-    color: '#fff',
-    textAlign: 'center',
+    fontWeight: "500",
+    color: "#fff",
+    textAlign: "center",
   },
   carouselSection: {
-    backgroundColor: '#f6f6f6',
+    backgroundColor: "#f6f6f6",
     paddingVertical: 20,
     paddingHorizontal: 15,
   },
   ngoSection: {
     paddingHorizontal: 15,
     paddingVertical: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     marginHorizontal: 15,
     marginTop: 20,
     borderRadius: 15,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -317,23 +342,23 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 15,
   },
   viewAllText: {
     fontSize: 14,
     color: Colors.light.tint,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   ngoScrollView: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   ngoCard: {
     width: 100,
     marginRight: 15,
-    alignItems: 'center',
+    alignItems: "center",
   },
   ngoImage: {
     width: 80,
@@ -343,16 +368,16 @@ const styles = StyleSheet.create({
   },
   ngoName: {
     fontSize: 14,
-    fontWeight: '500',
-    textAlign: 'center',
-    color: '#333',
+    fontWeight: "500",
+    textAlign: "center",
+    color: "#333",
   },
   impactMessage: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     margin: 15,
     padding: 20,
     borderRadius: 15,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -367,8 +392,8 @@ const styles = StyleSheet.create({
   },
   impactMessageText: {
     fontSize: 16,
-    color: '#555',
+    color: "#555",
     lineHeight: 24,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 });
