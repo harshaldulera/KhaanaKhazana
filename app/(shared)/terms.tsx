@@ -1,33 +1,45 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 export default function TermsScreen() {
   const termsContent = [
     {
-      title: 'Acceptance of Terms',
-      content: 'By accessing and using Khaana Khazana, you agree to be bound by these Terms and Conditions and all applicable laws and regulations.',
+      title: "Acceptance of Terms",
+      content:
+        "By accessing and using Khaana Khazana, you agree to be bound by these Terms and Conditions and all applicable laws and regulations.",
     },
     {
-      title: 'User Responsibilities',
-      content: 'Users must provide accurate information, maintain account security, and use the platform responsibly. Any misuse may result in account termination.',
+      title: "User Responsibilities",
+      content:
+        "Users must provide accurate information, maintain account security, and use the platform responsibly. Any misuse may result in account termination.",
     },
     {
-      title: 'Food Donation Guidelines',
-      content: 'Donors must ensure food items are safe, properly packaged, and meet our quality standards. NGOs and volunteers must handle donations with care and follow safety protocols.',
+      title: "Food Donation Guidelines",
+      content:
+        "Donors must ensure food items are safe, properly packaged, and meet our quality standards. NGOs and volunteers must handle donations with care and follow safety protocols.",
     },
     {
-      title: 'Delivery Terms',
-      content: 'Volunteers agree to deliver food items in a timely manner, following the assigned routes and maintaining proper food safety during transport.',
+      title: "Delivery Terms",
+      content:
+        "Volunteers agree to deliver food items in a timely manner, following the assigned routes and maintaining proper food safety during transport.",
     },
     {
-      title: 'Liability',
-      content: 'Khaana Khazana is not liable for any damages or losses incurred during the donation or delivery process. Users participate at their own risk.',
+      title: "Liability",
+      content:
+        "Khaana Khazana is not liable for any damages or losses incurred during the donation or delivery process. Users participate at their own risk.",
     },
     {
-      title: 'Platform Usage',
-      content: 'The platform should be used only for its intended purpose. Any unauthorized use or abuse of the platform is strictly prohibited.',
+      title: "Platform Usage",
+      content:
+        "The platform should be used only for its intended purpose. Any unauthorized use or abuse of the platform is strictly prohibited.",
     },
   ];
 
@@ -45,9 +57,10 @@ export default function TermsScreen() {
 
       <View style={styles.content}>
         <Text style={styles.lastUpdated}>Last Updated: April 10, 2024</Text>
-        
+
         <Text style={styles.introduction}>
-          Welcome to Khaana Khazana. Please read these Terms and Conditions carefully before using our platform.
+          Welcome to Khaana Khazana. Please read these Terms and Conditions
+          carefully before using our platform.
         </Text>
 
         {termsContent.map((section, index) => (
@@ -60,9 +73,10 @@ export default function TermsScreen() {
         <View style={styles.contactSection}>
           <Text style={styles.contactTitle}>Questions or Concerns?</Text>
           <Text style={styles.contactText}>
-            If you have any questions about our Terms & Conditions, please contact us at:
+            If you have any questions about our Terms & Conditions, please
+            contact us at:
           </Text>
-          <Text style={styles.contactInfo}>legal@khaanakhazana.com</Text>
+          <Text style={styles.contactInfo}>legal@ShareBite .com</Text>
         </View>
       </View>
     </ScrollView>
@@ -72,43 +86,43 @@ export default function TermsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
   backButton: {
     marginRight: 15,
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   content: {
     padding: 20,
   },
   lastUpdated: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginBottom: 15,
   },
   introduction: {
     fontSize: 16,
     lineHeight: 24,
-    color: '#333',
+    color: "#333",
     marginBottom: 20,
   },
   section: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 15,
     borderRadius: 10,
     marginBottom: 15,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -119,21 +133,21 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 10,
-    color: '#007AFF',
+    color: "#007AFF",
   },
   sectionContent: {
     fontSize: 14,
     lineHeight: 22,
-    color: '#444',
+    color: "#444",
   },
   contactSection: {
     marginTop: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 15,
     borderRadius: 10,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -144,17 +158,17 @@ const styles = StyleSheet.create({
   },
   contactTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 10,
   },
   contactText: {
     fontSize: 14,
     lineHeight: 22,
-    color: '#444',
+    color: "#444",
     marginBottom: 10,
   },
   contactInfo: {
     fontSize: 16,
-    color: '#007AFF',
+    color: "#007AFF",
   },
-}); 
+});

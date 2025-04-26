@@ -1,29 +1,35 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 export default function SupportScreen() {
   const supportItems = [
     {
-      title: 'FAQs',
-      icon: 'help-circle-outline',
-      description: 'Find answers to commonly asked questions',
+      title: "FAQs",
+      icon: "help-circle-outline",
+      description: "Find answers to commonly asked questions",
     },
     {
-      title: 'Contact Us',
-      icon: 'mail-outline',
-      description: 'Get in touch with our support team',
+      title: "Contact Us",
+      icon: "mail-outline",
+      description: "Get in touch with our support team",
     },
     {
-      title: 'Report an Issue',
-      icon: 'warning-outline',
-      description: 'Report technical problems or bugs',
+      title: "Report an Issue",
+      icon: "warning-outline",
+      description: "Report technical problems or bugs",
     },
     {
-      title: 'Feedback',
-      icon: 'chatbubble-outline',
-      description: 'Share your thoughts and suggestions',
+      title: "Feedback",
+      icon: "chatbubble-outline",
+      description: "Share your thoughts and suggestions",
     },
   ];
 
@@ -56,9 +62,11 @@ export default function SupportScreen() {
 
       <View style={styles.contactInfo}>
         <Text style={styles.contactTitle}>Contact Information</Text>
-        <Text style={styles.contactText}>Email: support@khaanakhazana.com</Text>
+        <Text style={styles.contactText}>Email: support@ShareBite .com</Text>
         <Text style={styles.contactText}>Phone: +1 (555) 123-4567</Text>
-        <Text style={styles.contactText}>Hours: Mon-Fri, 9:00 AM - 6:00 PM</Text>
+        <Text style={styles.contactText}>
+          Hours: Mon-Fri, 9:00 AM - 6:00 PM
+        </Text>
       </View>
     </ScrollView>
   );
@@ -67,34 +75,34 @@ export default function SupportScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
   backButton: {
     marginRight: 15,
   },
   title: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   content: {
     padding: 20,
   },
   supportItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
     padding: 15,
     borderRadius: 10,
     marginBottom: 10,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -107,9 +115,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#E3F2FD',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#E3F2FD",
+    justifyContent: "center",
+    alignItems: "center",
     marginRight: 15,
   },
   textContainer: {
@@ -117,19 +125,19 @@ const styles = StyleSheet.create({
   },
   itemTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 4,
   },
   itemDescription: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
   },
   contactInfo: {
     margin: 20,
     padding: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -140,12 +148,12 @@ const styles = StyleSheet.create({
   },
   contactTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 15,
   },
   contactText: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginBottom: 8,
   },
-}); 
+});
